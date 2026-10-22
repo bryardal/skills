@@ -27,5 +27,6 @@ Each skill's page has install steps for the Claude app, Claude Code, ChatGPT and
 - `site/`: the website, built by `node scripts/build.mjs` and served by Vercel.
 - `api/`: the signup functions behind the site's email form.
 - `scripts/package.mjs <skill>`: builds every download for a skill.
+- `submissions/<skill>.md`: marketplace answers and where each listing stands.
 
 Each skill keeps its own licence in its folder.
