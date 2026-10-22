@@ -125,7 +125,7 @@
           body: JSON.stringify({ email, skill: document.body.dataset.skill || "hub", token, company: form.company?.value || "" })
         });
         const data = await r.json().catch(() => ({}));
-        if (!r.ok || !data.ok) throw new Error(data.error || "Signup didn't go through. Try again in a moment.");
+        if (!r.ok || !data.ok) throw new Error(data.error || "Signup didn't work. Try again in a minute.");
         store.set(); markJoined();
         say(data.message || "You're in. Check your inbox for a welcome email.");
         if (form.closest("#gate")) setTimeout(closeGate, 700);

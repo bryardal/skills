@@ -7,16 +7,16 @@
   "demo": {
     "src": "media/kettle-hero.mp4",
     "liveUrl": "examples/kettle.html",
-    "caption": "A real lesson from one question: how does a kettle know when to switch off?",
+    "caption": "This lesson came from one question: “How does a kettle know when to switch off?”",
     "liveLabel": "Try this lesson"
   },
   "feature": {
-    "title": "Press it. Drag it. Guess first.",
-    "text": "Learners don't read about the kettle. They switch it on, heat the water and guess what happens before it does. Each lesson ends with a sandbox and a short quiz, and lists the sources behind every fact."
+    "title": "Every lesson is hands-on",
+    "text": "In the kettle lesson, learners switch it on, heat the water and guess what happens next. Every lesson ends with a sandbox and a short quiz, and it lists the source for every fact."
   },
   "examplesIntro": {
-    "title": "One question in. A lesson out.",
-    "text": "Each lesson was made by /teachme from a one-line question. No code written by hand."
+    "title": "Each lesson starts with one question",
+    "text": "/teachme made each of these from a one-line question. No one wrote any code."
   },
   "examples": [
     {
@@ -40,7 +40,7 @@
   ],
   "gallery": {
     "title": "More made with /teachme",
-    "text": "Machines, money, government, space and language.",
+    "text": "Lessons on machines, money, government, space and language.",
     "items": [
       {
         "title": "Steam engine",
@@ -80,35 +80,35 @@
   "faq": [
     {
       "q": "What is a skill?",
-      "aHtml": "<p>A small folder of instructions and tools that teaches an AI to do one job well. It isn't an app and doesn't run by itself. The AI reads it when you ask for something it covers.</p>"
+      "aHtml": "<p>It's a small folder of instructions and tools that teaches an AI to do one job well. It isn't an app, and it doesn't run on its own. The AI reads it when you ask for something it covers.</p>"
     },
     {
       "q": "The AI isn't using it",
-      "aHtml": "<p>Restart the app, then mention it by name: “use /teachme to explain how a kettle works”, or start with <code class=\"inline\">/teachme</code>. To check it's installed in Claude Code, run <code class=\"inline\">ls ~/.claude/skills/teachme</code>. You should see SKILL.md, README.md, LICENSE and the assets, references, scripts and templates folders.</p>"
+      "aHtml": "<p>Restart the app. Then name the skill in your message, like “use /teachme to explain how a kettle works”, or start your message with <code class=\"inline\">/teachme</code>.</p><p>To check that it's installed in Claude Code, run <code class=\"inline\">ls ~/.claude/skills/teachme</code>. You should see SKILL.md, README.md, LICENSE, and the folders assets, references, scripts and templates.</p>"
     },
     {
       "q": "What topics work best?",
-      "aHtml": "<p>Anything with parts or steps: machines, money and economics, living processes, how institutions work, language, space. It asks who's learning (a kid, a student or an adult) and pitches the lesson to them. On debated topics it says where experts disagree.</p>"
+      "aHtml": "<p>Anything with parts or steps works well: machines, money, living things, how governments work, language and space. It asks who is learning (a kid, a student or an adult) and fits the lesson to them. On topics where experts disagree, it says so.</p>"
     },
     {
       "q": "How does it keep the facts right?",
-      "aHtml": "<p>It researches the topic, writes a fact sheet, builds the lesson from it, and then a second agent checks every fact. Each lesson lists its sources and what it simplifies.</p>"
+      "aHtml": "<p>It researches the topic and writes a fact sheet, then builds the lesson from that sheet. A second agent then checks every fact. Each lesson lists its sources and what it simplifies.</p>"
     },
     {
       "q": "How long does a lesson take, and how many tokens?",
-      "aHtml": "<p>In test runs, a lesson took about 13 minutes on average and used roughly 140,000 to 170,000 tokens, research and fact-checking included. On a Claude or ChatGPT plan this counts toward your usage; on an API it's billed per token. Changes you ask for afterwards in the same chat are much quicker.</p>"
+      "aHtml": "<p>In test runs, a lesson took about 13 minutes on average and used about 140,000 to 170,000 tokens. That includes the research and the fact check.</p><p>On a Claude or ChatGPT plan, this counts toward your usage. On an API, you pay per token. Changes you ask for later in the same chat are much faster.</p>"
     },
     {
       "q": "Can I use it in a classroom?",
-      "aHtml": "<p>Yes. Lessons go full screen for a display, print as a worksheet with an answer key, and work with a keyboard, screen readers, phones and reduced-motion settings. You can turn the guesses and the quiz on or off.</p>"
+      "aHtml": "<p>Yes. Lessons go full screen for a class display and print as a worksheet with an answer key. They work with a keyboard, screen readers, phones and reduced-motion settings. You can turn the guesses and the quiz on or off.</p>"
     },
     {
       "q": "Is it safe to install?",
-      "aHtml": "<p>It's a folder of plain-text instructions, a drawing engine, example lessons and a few helper scripts. Installing only copies them. Each lesson is a single HTML file that runs in your browser like any web page. Want to look first? Download the .zip and open SKILL.md in any text editor.</p>"
+      "aHtml": "<p>It's a folder of plain-text instructions, a drawing engine, example lessons and a few helper scripts. Installing it only copies these files. Each lesson is one HTML file that runs in your browser like any web page. To look first, download the .zip and open SKILL.md in any text editor.</p>"
     },
     {
       "q": "Do I need to code?",
-      "aHtml": "<p>No. Ask in plain words. If you want changes, say so in the same chat: “make it for a 10-year-old”, “add a step about the thermostat”.</p>"
+      "aHtml": "<p>No. Ask in plain words. To change a lesson, say so in the same chat, like “make it for a 10-year-old” or “add a step about the thermostat”.</p>"
     }
   ],
   "license": "MIT",

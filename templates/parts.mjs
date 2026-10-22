@@ -107,7 +107,7 @@ const join = (brand) => `
 <section class="band mist" id="join" aria-labelledby="join-title"><div class="wrap narrow">
   <h2 id="join-title">Get new skills when they ship</h2>
   <div data-when-guest>
-    <p class="intro">One short email when a new skill or a big update is out.</p>
+    <p class="intro">You'll get one short email when a new skill or a big update is out.</p>
     ${signupForm("Sign up")}
   </div>
   <p class="intro" data-when-member hidden>You're on the list. New skills will land in your inbox.</p>
@@ -145,11 +145,11 @@ export const install = (p, brand) => {
       ask(`Describe what you want, or start with ${slashCmd}.`),
     ] : [
       { title: "Download", bodyHtml: `<p>Get the skill as a zip. Keep it zipped.</p><p><a class="link" href="${esc(u.zip)}" download>Download ${esc(p.slug)}.zip</a></p>` },
-      { title: "Upload", bodyHtml: `<p>In Claude, go to <b>Customize</b>, then <b>Skills</b>. Click <b>+</b>, then <b>Create skill</b>, then <b>Upload a skill</b>, and choose the zip.</p><p class="note">Code execution must be on: Settings, then Capabilities.</p>` },
+      { title: "Upload", bodyHtml: `<p>In Claude, go to <b>Customize</b>, then <b>Skills</b>. Click <b>+</b>, then <b>Create skill</b>, then <b>Upload a skill</b>, and choose the zip.</p><p class="note">First, turn on code execution in Settings, then Capabilities.</p>` },
       ask(`Start a new chat and describe what you want, or start with ${slashCmd}.`),
     ]) },
     { id: "claude-code", label: "Claude Code", html: steps([
-      { title: "Install", bodyHtml: `<p>Run this in Claude Code.</p>${cmd(c.oneStep, { quiet: true })}<p class="note">Older Claude Code: run <code class="inline">${esc(c.marketplace)}</code>, then <code class="inline">${esc(c.plugin)}</code>.</p>` },
+      { title: "Install", bodyHtml: `<p>Run this in Claude Code.</p>${cmd(c.oneStep, { quiet: true })}<p class="note">On an older Claude Code, run <code class="inline">${esc(c.marketplace)}</code>, then <code class="inline">${esc(c.plugin)}</code>.</p>` },
       { title: "Reload", bodyHtml: `<p>Run <code class="inline">/reload-plugins</code>, or restart Claude Code.</p>` },
       ask(`Describe what you want, or start with ${slashCmd}.`),
     ]) },
@@ -263,9 +263,9 @@ ${topbar(brand, [{ label: brand.author, href: brand.authorUrl, external: true }]
 <main id="main" tabindex="-1">
 <section class="hero"><div class="wrap">
   <h1>Skills</h1>
-  <p class="lede">Teach Claude and ChatGPT to do one job well. Install once, use it in any chat.</p>
+  <p class="lede">Each skill teaches Claude or ChatGPT to do one job well. Install it once and use it in any chat.</p>
   ${cmd(commands(brand, "").marketplace)}
-  <p class="meta">Run in Claude Code to get every skill here, and new ones as they ship.</p>
+  <p class="meta">Run this in Claude Code to get every skill here and each new one.</p>
 </div></section>
 <section class="band tight"><div class="wrap">
   <div class="cards">
@@ -283,15 +283,15 @@ export const privacy = (brand) => `${head({ title: `Privacy · ${brand.brandName
 ${topbar(brand, [{ label: "All skills", href: "/" }])}
 <main id="main" class="band"><div class="wrap narrow prose">
   <h1 class="page-title">Privacy</h1>
-  <p class="lede">Your email is used to send you the skills and updates you signed up for. Nothing else.</p>
-  <h3>What's collected</h3>
-  <p>Your email address and which skill page you signed up on. Signups pass a bot check by Cloudflare Turnstile.</p>
+  <p class="lede">We only use your email to send you the skills and updates you signed up for.</p>
+  <h3>What we keep</h3>
+  <p>We keep your email address and the skill page you signed up on. Cloudflare Turnstile checks each signup to stop bots.</p>
   <h3>Where it's kept</h3>
-  <p>With the email provider, Resend, used only to send emails from ${esc(brand.author)}. It's never sold or shared.</p>
+  <p>Your email is stored with our email provider, Resend. We use it only to send emails from ${esc(brand.author)}, and we never sell or share it.</p>
   <h3>Leaving</h3>
   <p>Every email has an unsubscribe link. To have your address deleted, reply to any email and ask.</p>
   <h3>On this site</h3>
-  <p>Your browser remembers that you signed up, so the site doesn't ask again. There are no ads or tracking scripts.</p>
+  <p>Your browser remembers that you signed up, so the site doesn't ask again. The site has no ads and no tracking scripts.</p>
 </div></main>
 ${footer(brand)}
 </body></html>

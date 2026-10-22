@@ -47,7 +47,7 @@ export function welcomeEmail(email, slug) {
 <tr><td style="padding:8px 36px 0;font-size:30px;line-height:1.15;letter-spacing:-1px">${s ? `Here's ${esc(s.name)}` : "You're in"}</td></tr>
 <tr><td style="padding:16px 36px 0;font-size:16px;line-height:1.6">
 ${s ? `<p style="margin:0 0 14px">${esc(s.tagline)}</p>
-<p style="margin:0 0 22px">Install steps for Claude and ChatGPT are on the page. It takes about a minute.</p>` : `<p style="margin:0 0 22px">Thanks for signing up. You'll get an email when a new skill or a big update ships.</p>`}
+<p style="margin:0 0 22px">The page has install steps for Claude and ChatGPT. It takes about a minute.</p>` : `<p style="margin:0 0 22px">Thanks for signing up. You'll get an email when a new skill or a big update is out.</p>`}
 <a href="${esc(link)}" style="display:inline-block;background:#F2C14E;color:#151A1A;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:bold">${s ? `Install ${esc(s.name)}` : "See all skills"}</a>
 ${s && s.firstPrompt ? `<p style="margin:26px 0 6px;opacity:.7;font-size:14px">A first prompt to try:</p><p style="margin:0;padding:14px 16px;background:#EDEDED;border-radius:10px">${esc(s.firstPrompt)}</p>` : ""}
 <p style="margin:26px 0 0">${esc(brand.author)}</p>

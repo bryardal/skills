@@ -16,7 +16,7 @@ Or install one skill directly: `/plugin install teachme --marketplace bryardal/s
 
 | Skill | What you get |
 | --- | --- |
-| [/teachme](https://skills.siaccelerator.co/teachme) | A fact-checked, hands-on visual lesson on any topic, in one web page. |
+| [/teachme](https://skills.siaccelerator.co/teachme) | Ask about any topic and get a hands-on lesson you can press, drag and play with. |
 
 Each skill's page has install steps for the Claude app, Claude Code, ChatGPT and Codex.
 

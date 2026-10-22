@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
   if (!(await humanCheck(body?.token, ip)))
-    return res.status(400).json({ ok: false, error: "The bot check didn't pass. Wait a second and try again." });
+    return res.status(400).json({ ok: false, error: "The bot check failed. Wait a few seconds and try again." });
 
   try {
     const all = env("RESEND_SEGMENT_ALL", false);
@@ -45,11 +45,11 @@ export default async function handler(req, res) {
       const exists = created.status === 409 || /exist/i.test(JSON.stringify(created.data));
       if (!exists) {
         console.error("contact create failed", created.status, created.data);
-        return res.status(502).json({ ok: false, error: "Signup didn't go through. Try again in a minute." });
+        return res.status(502).json({ ok: false, error: "Signup didn't work. Try again in a minute." });
       }
       // Signing up again is a fresh opt-in: make sure they're subscribed. No second welcome email.
       await resend("PATCH", `/contacts/${encodeURIComponent(email)}`, { unsubscribed: false });
-      return res.status(200).json({ ok: true, message: "Welcome back. You're unlocked." });
+      return res.status(200).json({ ok: true, message: "Welcome back. The page is open." });
     }
 
     const sent = await sendWelcome(email, slug);
@@ -57,11 +57,11 @@ export default async function handler(req, res) {
       const pending = env("RESEND_SEGMENT_PENDING", false);
       if (overLimit(sent) && pending) await resend("POST", `/contacts/${encodeURIComponent(email)}/segments/${pending}`);
       console.error("welcome email not sent", sent.status, sent.data);
-      return res.status(200).json({ ok: true, message: "You're in. Your welcome email is on its way shortly." });
+      return res.status(200).json({ ok: true, message: "You're in. Your welcome email will arrive soon." });
     }
     return res.status(200).json({ ok: true, message: "You're in. Check your inbox for the welcome email." });
   } catch (e) {
     console.error(e);
-    return res.status(500).json({ ok: false, error: "Signup didn't go through. Try again in a minute." });
+    return res.status(500).json({ ok: false, error: "Signup didn't work. Try again in a minute." });
   }
 }
