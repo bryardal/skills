@@ -7,7 +7,9 @@
 <meta name="description" content="Free skills for Claude and ChatGPT by Bry Ardal.">
 <link rel="canonical" href="https://skills.siaccelerator.co">
 
+<meta name="theme-color" content="#FFFFFF">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Superintelligence Accelerator">
 <meta property="og:title" content="Skills · Superintelligence Accelerator">
 <meta property="og:description" content="Free skills for Claude and ChatGPT by Bry Ardal.">
 <meta property="og:url" content="https://skills.siaccelerator.co">
@@ -17,51 +19,60 @@
 <meta name="twitter:title" content="Skills · Superintelligence Accelerator">
 <meta name="twitter:description" content="Free skills for Claude and ChatGPT by Bry Ardal.">
 <link rel="preload" href="/assets/fonts/geist-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/geist-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css">
 <script>window.SIA={"turnstileSiteKey":"TODO_TURNSTILE_SITE_KEY"}</script>
 <script src="/assets/site.js" defer></script>
 </head>
 <body data-gated="false" data-skill="hub">
 
+<a class="skip" href="#main">Skip to content</a>
 <header class="bar"><div class="wrap">
-  <a class="brand" href="/"><img src="/assets/brand/logo.png" alt="Superintelligence Accelerator by Bry Ardal"></a>
-  <nav aria-label="Site"><a href="https://github.com/bryardal/skills" target="_blank" rel="noopener">GitHub ↗</a><a href="https://bryantardal.substack.com" target="_blank" rel="noopener">Made by Bry Ardal ↗</a></nav>
+  <a class="brand" href="/" aria-label="Superintelligence Accelerator, all skills"><img src="/assets/brand/logo.png" alt="Superintelligence Accelerator" width="170" height="42"></a>
+  <nav aria-label="Site"><a href="https://bryantardal.substack.com" target="_blank" rel="noopener">Bry Ardal</a></nav>
 </div></header>
 <main id="main" tabindex="-1">
 <section class="hero"><div class="wrap">
-  <span class="badge">Free</span>
   <h1>Skills</h1>
-  <p class="lede">Skills that teach Claude and ChatGPT to do one job well. Install once, use them in any chat.</p>
+  <p class="lede">Teach Claude and ChatGPT to do one job well. Install once, use it in any chat.</p>
   <div class="cmd"><code>/plugin marketplace add bryardal/skills</code><button type="button" data-copy="/plugin marketplace add bryardal/skills">Copy</button></div>
-  <p class="cmd-note muted">Run in Claude Code to get every skill here, plus new ones as they ship.</p>
+  <p class="meta">Run in Claude Code to get every skill here, and new ones as they ship.</p>
+</div></section>
+<section class="band tight"><div class="wrap">
   <div class="cards">
-  <a class="card" href="/teachme"><div class="media"><img src="/teachme/media/kettle.png" alt="/teachme" loading="lazy"></div><div class="body"><h3>/teachme</h3><p>Ask about any topic. Get a hands-on lesson you press, drag and play with, with every fact checked against sources.</p></div></a>
+  <a class="tile wide card" href="/teachme"><span class="frame"><video src="/teachme/media/kettle-wide.mp4" poster="/teachme/media/kettle-wide.jpg" muted loop playsinline preload="none" data-autoplay aria-label="/teachme"></video></span><span class="title">/teachme</span><span class="desc">Ask about anything. Get a lesson you can press, drag and play with.</span></a>
   </div>
 </div></section>
-</main>
 
-<section class="band dark join" id="join"><div class="wrap">
-  <span class="badge">Free</span>
-  <h2>Get new skills when they ship</h2>
+<section class="band mist" id="join" aria-labelledby="join-title"><div class="wrap narrow">
+  <h2 id="join-title">Get new skills when they ship</h2>
   <div data-when-guest>
-    <p class="muted prose">One email when a new skill or a big update is out. Unsubscribe any time.</p>
+    <p class="intro">One short email when a new skill or a big update is out.</p>
     
 <form class="form js-signup" novalidate>
-  <label class="sr-only" for="email-3">Email address</label>
-  <input id="email-3" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+  <label class="sr-only" for="email-2">Email address</label>
+  <input id="email-2" name="email" type="email" inputmode="email" autocomplete="email" placeholder="Your email" required>
   <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
-  <button class="btn" type="submit">Get new skills</button>
+  <button class="btn" type="submit">Sign up</button>
   <div class="ts"></div>
 </form>
 <p class="form-msg" role="status" aria-live="polite"></p>
   </div>
-  <p class="muted" data-when-member hidden>You're on the list. New skills land in your inbox.</p>
-  <p class="muted" style="margin-top:18px">Follow <a href="https://x.com/bryantardal" target="_blank" rel="noopener">@bryantardal on X</a> or read the <a href="https://bryantardal.substack.com" target="_blank" rel="noopener">newsletter</a>.</p>
+  <p class="intro" data-when-member hidden>You're on the list. New skills will land in your inbox.</p>
 </div></section>
+</main>
 
-<footer class="band dark"><div class="wrap">
-  <img src="/assets/brand/logo-white.png" alt="Superintelligence Accelerator by Bry Ardal">
-  <p>Made by Bry Ardal · <a href="https://x.com/bryantardal" target="_blank" rel="noopener">@bryantardal</a> · <a href="https://bryantardal.substack.com" target="_blank" rel="noopener">Newsletter</a> · <a href="/privacy">Privacy</a></p>
-  
+<footer class="foot"><div class="wrap">
+  <img src="/assets/brand/logo-white.png" alt="Superintelligence Accelerator" width="150" height="37">
+  <nav aria-label="Elsewhere">
+    <a href="https://x.com/bryantardal" target="_blank" rel="noopener">@bryantardal on X</a>
+    <a href="https://bryantardal.substack.com" target="_blank" rel="noopener">Newsletter</a>
+    <a href="https://github.com/bryardal/skills" target="_blank" rel="noopener">GitHub</a>
+    <a href="/privacy">Privacy</a>
+  </nav>
+  <div class="small">
+    <p>Made by Bry Ardal.</p>
+    
+  </div>
 </div></footer>
 </body></html>

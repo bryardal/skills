@@ -18,7 +18,7 @@ export const brand = {
 export const skills = {
   "teachme": {
     "name": "/teachme",
-    "tagline": "Ask about any topic. Get a hands-on lesson you press, drag and play with, with every fact checked against sources.",
+    "tagline": "Ask about anything. Get a lesson you can press, drag and play with.",
     "url": "https://skills.siaccelerator.co/teachme",
     "firstPrompt": "teach me how a heat pump moves heat uphill, for adults"
   }

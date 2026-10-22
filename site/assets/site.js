@@ -50,15 +50,23 @@
     const t = document.getElementById(a.dataset.tab); if (t) t.click();
   }));
 
-  /* gallery videos play on hover or focus */
+  /* clips play while on screen; with reduced motion they stay on their poster */
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  document.querySelectorAll(".card video").forEach((v) => {
-    const card = v.closest(".card");
-    const play = () => { if (!still) v.play().catch(() => {}); };
-    const stop = () => { v.pause(); };
-    card.addEventListener("mouseenter", play); card.addEventListener("focus", play);
-    card.addEventListener("mouseleave", stop); card.addEventListener("blur", stop);
-  });
+  const clips = document.querySelectorAll("video[data-autoplay]");
+  if (!still && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      const v = e.target;
+      if (e.isIntersecting && !document.body.classList.contains("gated")) { v.preload = "auto"; v.play().catch(() => {}); }
+      else v.pause();
+    }), { threshold: 0.35 });
+    clips.forEach((v) => io.observe(v));
+    // the gate covers the page: start visible clips once it closes
+    window.addEventListener("sia:unlocked", () => clips.forEach((v) => { const r = v.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) { v.preload = "auto"; v.play().catch(() => {}); } }));
+  }
+
+  /* hairline under the top bar once the page scrolls */
+  const onScroll = () => document.body.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
   /* Turnstile (bot check), rendered explicitly into each form's .ts box */
   const tsKey = cfg.turnstileSiteKey && !/^TODO/.test(cfg.turnstileSiteKey) ? cfg.turnstileSiteKey : "";
@@ -85,6 +93,7 @@
     if (!gate) return;
     gate.hidden = true; document.body.classList.remove("gated");
     if (main) { main.inert = false; main.focus({ preventScroll: true }); }
+    window.dispatchEvent(new Event("sia:unlocked"));
   };
   const markJoined = () => {
     document.querySelectorAll("[data-when-member]").forEach((el) => (el.hidden = false));
@@ -102,7 +111,7 @@
       const email = form.email.value.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return say("Enter a full email address, like you@example.com.");
       const btn = form.querySelector("button[type=submit]");
-      btn.disabled = true; say("Signing you up…");
+      btn.disabled = true; say("One moment…");
       const wid = widgets.get(form);
       const token = wid !== undefined && window.turnstile ? window.turnstile.getResponse(wid) : "";
       try {
