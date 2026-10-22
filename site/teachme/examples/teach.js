@@ -12,8 +12,7 @@
      drawing styles                on-screen line weight             MP4 writer (video download)
      lesson page (CSS)             mountLesson (the lesson runtime)
 
-   Drawing core forked from Colorfigures (April Zhu, MIT), itself built on iso-figure (Tolga Cohce, MIT).
-   See LICENSE.
+   MIT licensed. Copyright notices are in LICENSE.
    ============================================================================================ */
 
 // Lesson-facing API: these are called from lesson pages, not from inside this file.

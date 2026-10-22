@@ -283,8 +283,7 @@ they hit. Full results: `evals/results/2026-10-21.md`.
 
 ## 1.0 (21 Oct 2026): first version
 
-- Lesson engine forked from Colorfigures (rotation code removed, wobble slider and colour swatches replaced by a
-  lesson layer): captions per step, guesses, a quiz, what this lesson leaves out, sources, keyboard and screen-reader
+- Lesson engine (drawing core with a lesson layer on top): captions per step, guesses, a quiz, what this lesson leaves out, sources, keyboard and screen-reader
   support, full screen, printable worksheet.
 - Fact-check layer: research first, a fact sheet with sources, every claim traced, an independent check.
 - Examples: an electric kettle and compound interest.

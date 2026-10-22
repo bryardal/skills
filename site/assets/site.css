@@ -45,7 +45,7 @@ h3{font-weight:500;font-size:17px;line-height:1.35;letter-spacing:-.015em}
 .page-title{font-size:clamp(48px,7vw,80px)}
 
 /* top bar */
-.bar{position:sticky;top:0;z-index:20;background:rgb(255 255 255 / .86);backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid transparent;transition:border-color .2s}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgb(255 255 255 / .86);backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid transparent;transition:border-color .2s}
 body.scrolled .bar{border-bottom-color:var(--line)}
 .bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:68px}
 .bar .brand{display:block;line-height:0;border-radius:6px}

@@ -111,7 +111,6 @@
       "aHtml": "<p>No. Ask in plain words. If you want changes, say so in the same chat: “make it for a 10-year-old”, “add a step about the thermostat”.</p>"
     }
   ],
-  "creditsHtml": "Built on <a href=\"https://april-zhu.com/colorfigures\" target=\"_blank\" rel=\"noopener\">Colorfigures</a> by April Zhu (MIT), which builds on <a href=\"https://isoglow.dev\" target=\"_blank\" rel=\"noopener\">iso-glow</a> by April Zhu and <a href=\"https://github.com/MrBongoC/ai-iso-skill\" target=\"_blank\" rel=\"noopener\">iso-figure</a> by Tolga Cohce (MIT).",
   "license": "MIT",
   "listings": {
     "claude": null,

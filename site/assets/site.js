@@ -112,6 +112,11 @@
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return say("Enter a full email address, like you@example.com.");
       const btn = form.querySelector("button[type=submit]");
       btn.disabled = true; say("One moment…");
+      if (cfg.preview) { // preview copy of the page: no email is sent
+        store.set(); markJoined(); say("Preview only: no email was sent.");
+        if (form.closest("#gate")) setTimeout(closeGate, 600);
+        btn.disabled = false; return;
+      }
       const wid = widgets.get(form);
       const token = wid !== undefined && window.turnstile ? window.turnstile.getResponse(wid) : "";
       try {
