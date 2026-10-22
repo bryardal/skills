@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://skills.siaccelerator.co/sitemap.xml

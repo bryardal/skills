@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How does a kettle know when to turn off?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: how an electric kettle switches itself off. Level: student.
+   Real process (where everything is after each step):
+   1 switch pressed -> circuit closed -> current through element -> element hot
+   2 element heats bottom water -> hot water rises, cool sinks (convection) -> whole kettle warms to ~96C
+   3 water reaches 100C -> boils -> steam fills the top -> some steam is led down a tube in the handle
+   4 steam heats a bimetallic disc at the bottom of the tube -> disc snaps -> pushes the switch off -> element cools
+   5 disc cools -> snaps back -> switch can be pressed again */
+const KX = 46, KY = 46;                       // kettle centre
+const Z0 = 11, ZT = 70;                       // glass bottom / top
+const rAt = z => 26 - (z - Z0) / (ZT - Z0) * 2;   // glass radius at height z (slight taper)
+const HY = KY + 38;                           // handle's outer (visible) face
+const kRing = (z, r, n=28) => on(PZ(z), ellUV(KX, KY, r, r, n));
+const kFrac = v => v - Math.floor(v);
+
+function kBubbles(st){
+  let s = '';
+  if (st.temp < 55) return s;
+  const big = st.boil, n = Math.round(6 + 26 * big), top = st.water - 1;
+  for (let i = 0; i < n; i++){
+    const a = i * 2.39996, rr = 4 + (i * 7.3 % 15), speed = .35 + (i % 5) * .09 + big * .5;
+    const ph = kFrac(i * .618 + st.t * speed);
+    const z = Z0 + 2 + ph * (top - Z0 - 2);
+    const size = (.5 + ph * (0.6 + 1.8 * big)) * (st.temp < 90 ? .7 : 1);
+    const [X, Y] = P(KX + rr * Math.cos(a), KY + rr * Math.sin(a), z);
+    s += `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(size * 1.2)}" fill="#ffffff" fill-opacity=".85" stroke="${WATER.d}" stroke-width=".5"/>`;
+  }
+  return s;
+}
+function kPuffs(pts, n, prog, r0, r1, op=1){
+  let s = '';
+  for (let i = 0; i < n; i++){
+    const t = prog - i / n;
+    if (t <= 0 || t >= 1) continue;
+    const [X, Y] = P(...along(pts, t)), r = r0 + (r1 - r0) * t;
+    s += `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(r)}" fill="#ffffff" fill-opacity="${(op * (1 - t * .6)).toFixed(2)}" stroke="${INK}" stroke-width=".6" stroke-opacity="${(.7 * (1 - t)).toFixed(2)}"/>`;
+  }
+  return s;
+}
+
+// the lid, rotated about a hinge along the back edge (the far right on screen)
+function kLid(deg, m){
+  const th = deg * Math.PI / 180, hy = KY - 24.6, hz = ZT + 1.5;
+  const rot = ([x, y, z]) => [x, hy + (y - hy) * Math.cos(th) + (z - hz) * Math.sin(th), hz - (y - hy) * Math.sin(th) + (z - hz) * Math.cos(th)];
+  const nrm = ([x, y, z]) => [x, y * Math.cos(th) + z * Math.sin(th), -y * Math.sin(th) + z * Math.cos(th)];
+  const ring = (z, r) => kRing(z, r).map(rot);
+  const A = ring(ZT, 24.6), B = ring(ZT + 3, 24.6), kA = ring(ZT + 3, 4.6), kB = ring(ZT + 7, 4.6);
+  let s = loft(A, B, n => tone(n, m));
+  const up = nrm([0, 0, 1]), down = up.map(v => -v);
+  if (vis(down)) s += fill(pd(A), tone(down, m)) + ink(pd(A), 1);
+  if (vis(up)){ s += fill(pd(B), tone(up, m)) + ink(pd(B), 1.1) + loft(kA, kB, n => toneI(n, DARK)) + fill(pd(kB), DARK.l) + ink(pd(kB), .9) + hullInk([...kA, ...kB], 1.1); }
+  return s + hullInk([...A, ...B], 1.6);
+}
+function kSteam(path, st, amt, n, r0, r1){
+  let s = '';
+  for (let i = 0; i < n; i++){ const t = kFrac(st.t * .5 + i / n), [X, Y] = P(...along(path, t)), r = r0 + (r1 - r0) * t;
+    s += `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(r)}" fill="#ffffff" fill-opacity="${(amt * (1 - t) * .95).toFixed(2)}" stroke="${INK}" stroke-width=".6" stroke-opacity="${(amt * (1 - t) * .7).toFixed(2)}"/>`; }
+  return s;
+}
+
+function scene(st, m){
+  let s = '';
+  const bh = 3;
+  // 1 the kettle stands on the white page: a soft shadow under the base and the handle
+  s += ground(KX, KY + 5, bh, 31, 36);
+
+  // 2 spout (far side, behind the glass)
+  s += `<g opacity=".8">${rod([KX, KY - 21, 62], [KX + 1, KY - 33, 70], 4.6, MAT.glass, toneI, 1.1, 2.7)}</g>`;
+
+  // 3 base
+  s += cyl(KX, KY, bh, Z0, 30, m, tone, 1.6);
+  s += ink(pd(on(PZ(Z0 - 3), arcUV(KX, KY, 30, -40, 130, 20)), false), .6);
+
+  // 4 inside the glass, back to front: far wall, floor, heater, water, convection, bubbles
+  const wallBack = loft(kRing(Z0, rAt(Z0)), kRing(ZT, rAt(ZT)), n => mix(CLEAR.m, '#ffffff', .25), true);
+  s += `<g opacity=".9">${wallBack}</g>`;
+  s += fill(pd(kRing(Z0 + .2, rAt(Z0) - .5)), mix(CLEAR.m, METAL.m, .5));
+  const glow = st.heat;
+  if (glow > 0) s += `<g opacity="${(glow * .55).toFixed(2)}">${fill(pd(kRing(Z0 + .4, 22)), '#ffb36b')}</g>`;
+  // water body: seen through the glass
+  const wz = st.water, wr = rAt(wz) - .6;
+  const waterCol = mix(WATER.l, '#cfe8f0', clamp((st.temp - 20) / 200));
+  s += `<g opacity=".8">${loft(kRing(Z0 + .5, rAt(Z0) - .6), kRing(wz, wr), n => toneI(n, {l: waterCol, m: WATER.m, d: WATER.d}))}</g>`;
+  const coil = mix(METAL.d, '#e2483d', glow);
+  for (const r of [7, 13, 19]) s += `<path d="${pd(kRing(Z0 + .6, r, 32))}" fill="none" stroke="${coil}" stroke-width="${(1.4 + glow * 1.2).toFixed(2)}" opacity="${(.55 + .45 * glow).toFixed(2)}"/>`;
+  if (st.conv > 0){
+    const o = st.conv.toFixed(2), ph = st.t * .7;
+    s += `<g opacity="${o}">` + arrow3([[KX, KY, Z0 + 4], [KX, KY, wz - 7]], 1.6, '#e2483d', {dash: true, phase: ph})
+       + arrow3([[KX + 12, KY - 12, wz - 6], [KX + 12, KY - 12, Z0 + 6]], 1.4, WATER.d, {dash: true, phase: ph})
+       + arrow3([[KX - 13, KY + 11, wz - 6], [KX - 13, KY + 11, Z0 + 6]], 1.4, WATER.d, {dash: true, phase: ph}) + '</g>';
+  }
+  s += kBubbles(st);
+  // water surface (ripples when boiling)
+  const surf = on(PZ(wz), ellUV(KX, KY, wr, wr, 28).map(([u, v], i) => [u, v]));
+  s += `<path d="${pd(surf)}" fill="${WATER.m}" fill-opacity=".55" stroke="${WATER.d}" stroke-width="1.1"/>`;
+  if (st.boil > .2) for (let i = 0; i < 4; i++){ const rr = (kFrac(st.t * 1.3 + i / 4)) * wr * .9; s += `<path d="${pd(kRing(wz + .1, rr, 24))}" fill="none" stroke="#ffffff" stroke-width=".8" opacity="${(.8 * st.boil).toFixed(2)}"/>`; }
+
+  // 5 glass front: light tint, streaks, level marks, rim
+  s += `<g opacity=".32">${loft(kRing(Z0, rAt(Z0)), kRing(ZT, rAt(ZT)), n => CLEAR.l)}</g>`;
+  for (const [a, w] of [[28, 1.6], [36, .9]]) s += `<path d="${pd(on(PZ(0), [[0,0]]).map(() => [0,0,0]))}" fill="none"/>`
+    + line([[KX + rAt(Z0 + 6) * Math.cos(a * Math.PI / 180), KY + rAt(Z0 + 6) * Math.sin(a * Math.PI / 180), Z0 + 6], [KX + rAt(ZT - 6) * Math.cos(a * Math.PI / 180), KY + rAt(ZT - 6) * Math.sin(a * Math.PI / 180), ZT - 6]], 0).replace(`stroke="${INK}"`, `stroke="#ffffff" stroke-opacity=".75"`).replace(/stroke-width="[\d.]+"/, `stroke-width="${w}"`);
+  for (const [z, label] of [[62, 'MAX'], [24, 'MIN']]){
+    const r = rAt(z);
+    s += ink(pd(on(PZ(z), arcUV(KX, KY, r, 10, 34, 6)), false), 1);
+    const [X, Y] = P(KX + r * Math.cos(.38), KY + r * Math.sin(.38), z);
+    s += `<text x="${f(X - 2)}" y="${f(Y - 1.6)}" font-size="4.4" font-family="ui-monospace,Menlo,monospace" font-weight="800" fill="${INK}" text-anchor="end">${label}</text>`;
+  }
+  s += hullInk([...kRing(Z0, rAt(Z0)), ...kRing(ZT, rAt(ZT))], 2.4);
+  s += ink(pd(kRing(ZT, rAt(ZT))), 1.1);
+
+  // 6 lid and knob (hinged at the back; st.lid 0 = closed, 1 = open)
+  if (st.lid > .01){
+    s += `<path d="${pd(kRing(ZT + .05, rAt(ZT) - .3))}" fill="#33475c" fill-opacity=".28" stroke="${INK}" stroke-width="1"/>`;
+    if (st.boil > .2) s += kSteam([[KX, KY, ZT], [KX - 2, KY + 2, ZT + 12], [KX - 4, KY + 4, ZT + 24]], st, st.boil * st.lid, 8, 2.4, 6.5);
+  }
+  s += kLid(st.lid * 100, MAT.steel);
+
+  // 7 handle (nearest the viewer on the left): connectors, grip, steam tube window, disc window, switch, light
+  s += box(KX - 5, KY + 22, 59, KX + 5, HY, 67, m, tone);                 // top arm
+  s += box(KX - 7, KY + 26, Z0, KX + 7, HY, 23, m, tone);                 // bottom block (holds the control)
+  s += box(KX - 6, HY - 9, 23, KX + 6, HY, 59, m, tone);                  // grip
+  s += hullInk([[KX - 5, KY + 22, 67], [KX + 5, HY, 67], [KX - 7, HY, Z0], [KX + 7, HY, Z0], [KX + 7, KY + 26, Z0], [KX - 6, HY, 67], [KX + 6, HY - 9, 67]], 1.8);
+  // steam tube, seen through a window in the grip
+  const tube = rectUV(KX - 2.4, 24, KX + 2.4, 62);
+  s += shape(on(PY(HY + .05), tube), CLEAR.d, .9);
+  s += line(on(PY(HY + .05), [[KX, 61], [KX, 25]]), .5);
+  if (st.steamDown > 0){
+    let puffs = '';
+    for (let i = 0; i < 5; i++){ const t = kFrac(st.t * .55 + i / 5), [X, Y] = P(KX, HY + .1, 62 - t * 40);
+      puffs += `<circle cx="${f(X)}" cy="${f(Y)}" r="2.3" fill="#ffffff" stroke="${INK}" stroke-width=".7" opacity="${(Math.min(1, st.steamDown) * (.4 + .6 * Math.sin(Math.PI * t))).toFixed(2)}"/>`; }
+    s += clipTo(on(PY(HY + .1), tube), puffs);
+  }
+  // the two-metal disc, behind a round window at the bottom of the tube
+  const discOn = LIT.has('Disc') || st.disc > .5;
+  s += shape(on(PY(HY + .05), ellUV(KX, 17, 4.6, 4.6, 24)), DARK.l, 1);
+  s += shape(on(PY(HY + .1), ellUV(KX, 17, 3.6, 3.6, 24)), discOn ? mix(METAL.l, '#f4b829', .55) : METAL.l, .7);
+  const bulge = (1 - 2 * st.disc) * 1.8;
+  s += line(on(PY(HY + .15), Array.from({length: 9}, (_, i) => { const u = -3 + i * .75; return [KX + u, 17 + bulge * (1 - (u / 3) ** 2)]; })), 1.1);
+  s += line(on(PY(HY + .15), Array.from({length: 9}, (_, i) => { const u = -3 + i * .75; return [KX + u, 17 + bulge * (1 - (u / 3) ** 2) - .9]; })), .5);
+  // rocker switch set into the front of the handle base: it tilts in place (lower half pressed = on)
+  const RX = KX + 7.02, ru0 = HY - 8.5, ru1 = HY - 2.5, rv0 = 13, rv1 = 20.5, rm = (rv0 + rv1) / 2, pr = st.lever;
+  const swLit = LIT.has('Switch');
+  let sw = shape(on(PX(RX), rrUV(ru0 - .6, rv0 - .6, ru1 + .6, rv1 + .6, 1.2)), DARK.d, .8);                        // recess
+  sw += shape(on(PX(RX + .05), rectUV(ru0, rm, ru1, rv1)), mix(DARK.l, '#ffffff', .18 * (1 - pr)), .7);              // top half
+  sw += shape(on(PX(RX + .05), rectUV(ru0, rv0, ru1, rm)), mix(DARK.m, '#000000', .25 * pr), .7);                    // bottom half
+  sw += line(on(PX(RX + .1), [[ru0 + .6, rm], [ru1 - .6, rm]]), pr > .5 ? 1.4 : .8);
+  if (swLit) sw += `<path d="${pd(on(PX(RX + .15), rrUV(ru0 - 1.6, rv0 - 1.6, ru1 + 1.6, rv1 + 1.6, 2)))}" fill="none" stroke="#ffc93c" stroke-width="2.4"/>`;
+  s += act('switch', sw);
+  // power light above the switch
+  s += shape(on(PX(RX + .05), ellUV((ru0 + ru1) / 2, 21.8, .9, .9, 12)), st.on ? '#ff7a3d' : DARK.m, .6);
+  if (st.on) { const [X, Y] = P(RX + .1, (ru0 + ru1) / 2, 21.8); s += `<circle cx="${f(X)}" cy="${f(Y)}" r="3.4" fill="#ff7a3d" opacity=".35"/>`; }
+
+  // 8 steam leaving the spout
+  if (st.spout * (1 - st.lid) > 0.02){
+    const path = [[KX + 1, KY - 34, 71], [KX + 2, KY - 37, 78], [KX + 5, KY - 39, 86]];
+    for (let i = 0; i < 6; i++){ const t = kFrac(st.t * .5 + i / 6), [X, Y] = P(...along(path, t)), r = 1.6 + 3.4 * t;
+      const o = st.spout * (1 - st.lid); s += `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(r)}" fill="#ffffff" fill-opacity="${(o * (1 - t) * .95).toFixed(2)}" stroke="${INK}" stroke-width=".6" stroke-opacity="${(o * (1 - t) * .7).toFixed(2)}"/>`; }
+  }
+
+  // 9 labels last
+  s += tag([KX + 9, KY + 2, Z0 + .6], 74, 26, 'Heater');
+  s += tag([KX, HY, 44], -58, -18, 'Steam channel');
+  s += tag([KX, HY, 17], -56, 14, 'Disc');
+  s += tag([KX + 7.1, HY - 5.5, 15], 46, 40, 'Switch');
+  return s;
+}
+
+// tween state keys (the engine's clock st.t keeps bubbles and puffs moving, even between steps)
+function kAnim(ui, targets, secs, after){
+  const st = ui.st, from = {}; for (const k in targets) from[k] = st[k]; let t = 0;
+  ui.animate(dt => { t = Math.min(1, t + dt / secs); const e = ease(t);
+    for (const k in targets) st[k] = from[k] + (targets[k] - from[k]) * e; return t < 1; }, after);
+}
+
+// Try it yourself: a small simulation (time is sped up). Facts behind it: the cut-out works when steam reaches the disc;
+// with the lid open it will not operate (manual); a hot disc must cool before the switch stays on (manual).
+function kTick(st, dt, ui){
+  st.lid += ((st.lidOpen ? 1 : 0) - st.lid) * Math.min(1, dt * 6);
+  if (st.on){ st.heat = Math.min(1, st.heat + dt * 2); st.lever = Math.min(1, st.lever + dt * 8); st.temp = Math.min(100, st.temp + dt * 16); }
+  else { st.heat = Math.max(0, st.heat - dt); st.lever = Math.max(0, st.lever - dt * 8); st.temp = Math.max(20, st.temp - dt * 1.2); }
+  st.conv = st.on && st.temp < 99 ? Math.min(1, st.conv + dt * 2) : Math.max(0, st.conv - dt);
+  const boiling = st.on && st.temp >= 99.5;
+  st.boil = boiling ? Math.min(1, st.boil + dt * 2) : Math.max(0, st.boil - dt * .7);
+  st.spout = st.boil;
+  st.boilT = boiling ? st.boilT + dt : 0;
+  if (st.boil > .5 && !st.lidOpen) st.steamDown = Math.min(1.4, st.steamDown + dt * .5);
+  else st.steamDown = Math.max(0, st.steamDown - dt * .4);
+  if (st.steamDown > 1.1 && st.disc < 1){ st.disc = 1; st.on = false; ui.note('Click! Steam heated the disc, it snapped, and the kettle turned off.', 4000); }
+  if (!st.on && st.disc > 0 && st.steamDown < .15 && st.temp < 97) st.disc = 0;
+}
+function kObserve(st){
+  if (st.on && st.temp < 99.5) return `Heating: the water is ${Math.round(st.temp)}°C.`;
+  if (st.on && st.lidOpen) return `Boiling with the lid open for ${Math.round(st.boilT)} seconds. Steam escapes out of the top, so not enough reaches the disc and the automatic switch-off doesn\u2019t work. Switch it off yourself.`;
+  if (st.on) return 'Boiling. Steam is going down the channel to the disc.';
+  if (st.disc > .5) return 'Off. The disc is still hot, so the switch won’t stay on yet.';
+  if (st.temp > 25) return `Off. The water is cooling: ${Math.round(st.temp)}°C.`;
+  return 'The kettle is off and full of cold water.';
+}
+
+mountLesson({
+  title: 'How does a kettle know when to turn off?',
+  level: 'student',
+  palette: MAT.whitePlastic,
+  state: { water: 56, temp: 20, heat: 0, on: false, lever: 0, conv: 0, boil: 0, spout: 0, steamDown: 0, disc: 0, t: 0, lid: 0, lidOpen: false, boilT: 0 },
+  stats: st => [{ label: 'Water', value: Math.round(st.temp) + '°C' }, { label: 'Power', value: st.on ? 'On' : 'Off', small: true }],
+  scene,
+  intro: 'This glass kettle is full of cold tap water at 20°C. Nobody watches it, but it still turns itself off when the water boils. You’ll switch it on and find out how it knows.',
+  parts: {
+    'Heater': 'A metal heating element under the water. Electricity flowing through it makes it hot.',
+    'Steam channel': 'A narrow channel that carries steam from the top of the kettle down to the disc. It is usually inside the handle.',
+    'Disc': 'Two different metals stuck together. When steam heats it, one metal expands more than the other, so the disc snaps into a new shape.',
+    'Switch': 'Turns the power on and off. The snapping disc pushes it off.',
+  },
+  steps: [
+    { title: 'Switch on', lit: ['Switch', 'Heater'],
+      do: { label: 'Press the switch', part: 'switch', at: [KX + 7.1, HY - 5.5, 16.8], hint: 'Press the switch on the kettle to turn it on.' },
+      say: 'You press the switch. Electricity now flows through the heating element under the water, and the element gets hot.',
+      run(st, ui){ st.on = true; kAnim(ui, { lever: 1, heat: 1 }, 1.2); } },
+    { title: 'Heat the water', lit: ['Heater'],
+      drag: { label: 'Drag to heat the water', secs: 4 },
+      say: 'The element warms the water at the bottom. Warm water is less dense than cold water, so it rises and cold water sinks to take its place. This flow is called convection, and it heats all the water.',
+      run(st, ui){ kAnim(ui, { temp: 96, conv: 1 }, 4); } },
+    { title: 'Boil', lit: ['Steam channel'],
+      guess: { q: 'The water is about to boil. What tells this kettle to turn itself off?',
+        choices: ['A timer', 'A thermometer in the water', 'Steam bending a small metal disc'], answer: 2,
+        why: 'This kettle has no timer and no electronic sensor, though some newer kettles do use a sensor. Steam goes down to a small disc made of two metals, and the heat makes the disc snap.' },
+      say: 'At 100°C the water boils, and steam fills the top of the kettle. Steam leaves through the spout, and some goes down a narrow channel in the handle.',
+      run(st, ui){ kAnim(ui, { temp: 100, conv: 0, boil: 1, spout: 1, steamDown: 1 }, 3.2); } },
+    { title: 'The disc snaps', lit: ['Disc', 'Switch'], zoom: { at: [KX + 2, HY, 24], k: 2.3 },
+      drag: { label: 'Drag to send steam down to the disc', secs: 3 },
+      say: 'At the bottom of the channel is a disc made of two metals stuck together. Heat from the steam makes one metal expand more than the other. So the disc suddenly snaps into a new shape, which flicks the switch off and cuts the power.',
+      // one timeline so the slider can drive it: steam reaches the disc, the disc snaps, the switch flicks off
+      run(st, ui){ let t = 0; ui.animate(dt => { t = Math.min(1, t + dt / 3);
+        st.steamDown = 1 + .2 * ease(Math.min(1, t / .45)); st.disc = t < .45 ? 0 : ease(Math.min(1, (t - .45) / .08));
+        if (t >= .55){ st.on = false; const b = ease((t - .55) / .45); st.lever = 1 - b; st.heat = 1 - b; st.boil = 1 - b; st.spout = 1 - .75 * b; st.temp = 100 - 2 * b; }
+        return t < 1; }); } },
+    { title: 'Ready again', lit: ['Disc', 'Switch'], zoom: { at: [KX + 2, HY, 24], k: 2.3 },
+      do: { label: 'Press the switch again', part: 'switch', at: [KX + 7.1, HY - 5.5, 16.8], hint: 'Try to switch the kettle back on straight away.' },
+      say: 'The switch may not stay on while the disc is still hot. As the disc cools, it snaps back, sometimes with a quiet click. Then the switch works again.',
+      run(st, ui){ kAnim(ui, { lever: 1 }, .25, () => kAnim(ui, { lever: 0 }, .3, () => kAnim(ui, { disc: 0, spout: 0, steamDown: 0, temp: 88 }, 2))); } },
+  ],
+  tryit: {
+    say: 'Now it’s your kettle. Switch it on with the lid closed, then try again with the lid open. Watch what the disc does.',
+    setup(st){ Object.assign(st, { temp: 20, heat: 0, on: false, lever: 0, conv: 0, boil: 0, spout: 0, steamDown: 0, disc: 0, lid: 0, lidOpen: false, boilT: 0 }); },
+    tick: kTick,
+    observe: kObserve,
+    controls: [
+      { type: 'button', label: st => st.on ? 'Switch off' : 'Switch on',
+        onClick(st, ui){ if (!st.on && st.disc > .5) ui.note('The switch won’t stay on yet. The disc is still hot, so wait a moment.'); else st.on = !st.on; } },
+      { type: 'toggle', key: 'lidOpen', label: 'Lid open' },
+    ],
+  },
+  idea: 'Steam heats a two-metal disc until it snaps, and the snap turns the kettle off.',
+  simplified: [
+    'Real kettles hide the steam channel and the disc, usually in the handle and base. Here they are see-through.',
+    'Many kettles also have a separate safety cut-out in case you turn them on with no water.',
+    'Water boils at 100°C at sea level. High up a mountain, it boils at a lower temperature.',
+    'Some newer kettles use an electronic sensor instead of a disc.',
+    'In Try it yourself, time is sped up so the water boils in a few seconds, and the boil-dry safety cut-out is not shown.',
+  ],
+  check: [
+    { q: 'Why doesn’t the switch turn off as soon as the water gets warm?',
+      choices: ['The disc only snaps when steam makes it very hot', 'The element has to cool down first', 'The switch has a five-minute timer'], answer: 0,
+      why: 'The disc snaps at the heat that steam gives it, so it waits for the boil.' },
+    { q: 'You boil the kettle with the lid open. What happens?',
+      choices: ['It turns off sooner', 'It keeps boiling much longer than it should', 'The water never gets hot'], answer: 1,
+      why: 'Steam escapes through the open top, so it doesn’t reach the disc. Manufacturers warn that with the lid open, the kettle may not turn off and may boil dry.' },
+    { q: 'Which part turns heat into movement?',
+      choices: ['The heating element', 'The two-metal disc', 'The water'], answer: 1,
+      why: 'Heat makes the disc bend and snap. That movement pushes the switch.' },
+  ],
+  sources: [
+    { title: 'Ingenia (Royal Academy of Engineering): How do kettles know when to switch off?', url: 'https://www.ingenia.org.uk/articles/how-do-kettles-know-when-to-switch-off', note: 'Steam channel in the handle, two-metal disc that snaps, disc flips back as it cools' },
+    { title: 'Restarters Wiki: Kettles, electric urns and rice boilers', url: 'https://wiki.restarters.net/Kettles_and_Electric_Urns', note: 'Steam over a popping disc flicks the switch, boil-dry cut-outs, electronic sensors' },
+    { title: 'Toshiba kettle KT-17SH1NMY user manual', url: 'https://www.toshiba-lifestyle.com/content/dam/toshiba-aem/my/small-home-appliances/kettle/1-7l-kettle-kt-17sh1nmy/KT-17SH1NMY-UserManual.pdf', note: 'Cut-out will not work with the lid open; wait for the switch to reset' },
+    { title: 'Mini Physics: Convection', url: 'https://www.miniphysics.com/convection.html', note: 'Warm water is less dense and rises, cooler water sinks' },
+  ],
+});
+</script>
+</body>
+</html>

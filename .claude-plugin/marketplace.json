@@ -1,0 +1,17 @@
+{
+  "name": "siaccelerator",
+  "description": "Free skills by Bry Ardal. https://skills.siaccelerator.co",
+  "owner": {
+    "name": "Bry Ardal",
+    "url": "https://bryantardal.substack.com"
+  },
+  "plugins": [
+    {
+      "name": "teachme",
+      "source": "./plugins/teachme",
+      "description": "Turn any topic into a fact-checked, hands-on visual lesson in one HTML file: press parts, drag sliders, guess first, try a sandbox, take a quiz.",
+      "version": "1.0.0",
+      "homepage": "https://skills.siaccelerator.co/teachme"
+    }
+  ]
+}

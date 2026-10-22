@@ -1,0 +1,60 @@
+{
+  "slug": "teachme",
+  "name": "teachme",
+  "tagline": "Ask about any topic. Get a hands-on lesson you press, drag and play with, with every fact checked against sources.",
+  "metaDescription": "A free AI skill for Claude and ChatGPT. Ask about any topic and get a fact-checked, hands-on visual lesson in one web page.",
+  "askNoun": "a lesson",
+  "demo": {
+    "src": "examples/kettle.html",
+    "liveUrl": "/teachme/examples/kettle.html",
+    "caption": "A live lesson made with /teachme from one question: how does a kettle know when to switch off? Press things."
+  },
+  "feature": {
+    "badge": "Learn by doing",
+    "title": "Press it. Drag it. Guess first.",
+    "text": "Every lesson moves one step at a time. Press the real part to start a step, drag a slider to make it happen, guess before the surprising bit, tap any part to see what it is, then play in a sandbox and take a short quiz. Under every lesson you get the sources and a note on what was simplified.",
+    "link": { "label": "Open the kettle lesson", "href": "examples/kettle.html" }
+  },
+  "examplesIntro": {
+    "title": "One question in, a working lesson out",
+    "text": "Each lesson came from the question beside it, made by /teachme with no code written by hand."
+  },
+  "examples": [
+    { "prompt": "how does a kettle know when to switch off?", "title": "Electric kettle", "media": "media/kettle.png", "href": "examples/kettle.html" },
+    { "prompt": "teach me why compound interest snowballs", "title": "Compound interest", "media": "media/compound-interest.png", "href": "examples/compound-interest.html" },
+    { "prompt": "how does a bill become a law?", "title": "How a bill becomes law", "media": "media/bill-to-law.png", "href": "examples/bill-to-law.html" }
+  ],
+  "gallery": {
+    "title": "More made with /teachme",
+    "text": "Machines, ideas, living things, language and space. Open any of them and press things.",
+    "items": [
+      { "title": "Steam engine", "media": "media/steam-engine-sq.png", "href": "examples/steam-engine.html" },
+      { "title": "Photosynthesis", "media": "media/photosynthesis-sq.png", "href": "examples/photosynthesis.html" },
+      { "title": "Supply and demand", "media": "media/supply-demand-sq.png", "href": "examples/supply-demand.html" },
+      { "title": "Moon phases", "media": "media/moon-phases-sq.png", "href": "examples/moon-phases.html" },
+      { "title": "How a sentence works", "media": "media/sentence-sq.png", "href": "examples/sentence.html" }
+    ]
+  },
+  "prompts": [
+    "teach me how a heat pump moves heat uphill, for adults",
+    "how does a toilet flush refill itself? (for kids)",
+    "teach me photosynthesis",
+    "how does a steam engine work?",
+    "why did the Western Roman Empire fall?",
+    "how do writers build suspense?"
+  ],
+  "faq": [
+    { "q": "What is a skill?", "aHtml": "<p>A small folder of instructions and tools that teaches an AI to do one job well. It isn't an app and doesn't run by itself. The AI reads it when you ask for something it covers.</p>" },
+    { "q": "The AI isn't using it", "aHtml": "<p>Restart the app, then mention it by name: “use /teachme to explain how a kettle works”, or start with <code class=\"inline\">/teachme</code>. To check it's installed in Claude Code, run <code class=\"inline\">ls ~/.claude/skills/teachme</code>. You should see SKILL.md, README.md, LICENSE and the assets, references, scripts and templates folders.</p>" },
+    { "q": "What topics work best?", "aHtml": "<p>Anything with parts or steps: machines, money and economics, living processes, how institutions work, language, space. It asks who's learning (a kid, a student or an adult) and pitches the lesson to them. On debated topics it says where experts disagree.</p>" },
+    { "q": "How does it keep the facts right?", "aHtml": "<p>It researches the topic, writes a fact sheet, builds the lesson from it, and then a second agent checks every fact. Each lesson lists its sources and what it simplifies.</p>" },
+    { "q": "How long does a lesson take, and how many tokens?", "aHtml": "<p>In test runs, a lesson took about 13 minutes on average and used roughly 140,000 to 170,000 tokens, research and fact-checking included. On a Claude or ChatGPT plan this counts toward your usage; on an API it's billed per token. Changes you ask for afterwards in the same chat are much quicker.</p>" },
+    { "q": "Can I use it in a classroom?", "aHtml": "<p>Yes. Lessons go full screen for a display, print as a worksheet with an answer key, and work with a keyboard, screen readers, phones and reduced-motion settings. You can turn the guesses and the quiz on or off.</p>" },
+    { "q": "Is it safe to install?", "aHtml": "<p>It's a folder of plain-text instructions, a drawing engine, example lessons and a few helper scripts. Installing only copies them. Each lesson is a single HTML file that runs in your browser like any web page. Want to look first? Download the .zip and open SKILL.md in any text editor.</p>" },
+    { "q": "Do I need to code?", "aHtml": "<p>No. Ask in plain words. If you want changes, say so in the same chat: “make it for a 10-year-old”, “add a step about the thermostat”.</p>" }
+  ],
+  "creditsHtml": "Built on <a href=\"https://april-zhu.com/colorfigures\" target=\"_blank\" rel=\"noopener\">Colorfigures</a> by April Zhu (MIT), which builds on <a href=\"https://isoglow.dev\" target=\"_blank\" rel=\"noopener\">iso-glow</a> by April Zhu and <a href=\"https://github.com/MrBongoC/ai-iso-skill\" target=\"_blank\" rel=\"noopener\">iso-figure</a> by Tolga Cohce (MIT).",
+  "license": "MIT",
+  "listings": { "claude": null, "chatgpt": null },
+  "ogImage": ""
+}

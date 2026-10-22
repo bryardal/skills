@@ -1,0 +1,13 @@
+{
+  "name": "siaccelerator-skills",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "package": "node scripts/package.mjs",
+    "setup:resend": "node scripts/setup-resend.mjs",
+    "dev": "node scripts/dev.mjs",
+    "preview": "MOCK=1 node scripts/dev.mjs"
+  }
+}

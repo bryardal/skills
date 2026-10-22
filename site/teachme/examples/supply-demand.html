@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How do supply and demand set a price?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: How do supply and demand set a price? Level: adult. Facts: facts.md.
+   Real process: buyers want less as price rises (law of demand); sellers offer more as price rises (law of supply);
+   above the crossing price there is a surplus and sellers cut prices; below it there is a shortage and buyers bid
+   prices up; price settles where quantity demanded equals quantity supplied (equilibrium).
+   Sandbox facts: demand rises -> price and quantity rise; supply falls -> price rises, quantity falls.
+   Illustrative model: Qd = 11 + d - P, Qs = P - 1 - s (boxes a day, $ a box). Base equilibrium P = 6, Q = 5. */
+
+// ---- geometry ----
+const sdQd = (st, p) => clamp(11 + st.d - p, 0, 12);
+const sdQs = (st, p) => clamp(p - 1 - st.s, 0, 12);
+const sdEqP = st => (12 + st.d + st.s) / 2;
+const sdBlue = '#2f6fd1', sdOrange = '#e07b1f', sdRed = '#d64545', sdAmber = '#f0a830';
+const sdCrateM = MAT.wood, sdUnsoldM = matOf('#f0a830');
+const sdBuyerM = matOf('#4a78c2'), sdMetM = matOf('#3b9a5e'), sdLeftM = matOf('#a3abb5');
+// table top slots for boxes: 3 rows (x) by 4 columns (y)
+const sdSlots = [];
+for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) sdSlots.push([13 + r * 6.2, -24 - c * 7]);
+sdSlots.sort((a, b) => (a[0] - a[1]) - (b[0] - b[1]));
+
+function sdCrate(x, y, z, m){
+  let s = box(x - 2.6, y - 3, z, x + 2.6, y + 3, z + 3.6, m, tone, 1.1);
+  const apple = matOf('#c8312b');
+  s += ball([x - 1.1, y - 1.4, z + 4.1], 1.2, apple) + ball([x + 1.1, y - 1.4, z + 4.1], 1.2, apple);
+  s += ball([x - 1.1, y + 1.4, z + 4.1], 1.2, apple) + ball([x + 1.1, y + 1.4, z + 4.1], 1.2, apple);
+  return s;
+}
+
+function sdGraph(st){
+  const g = graph([-26, 40, 6], 60, 46, { xr: [0, 12], yr: [0, 12] });
+  const A = 11 + st.d, B = 1 + st.s, p = st.p;
+  const qd = sdQd(st, p), qs = sdQs(st, p);
+  let s = g.panel();
+  s += g.axes({ x: 'Boxes a day', y: 'Price ($ a box)', xticks: [0, 2, 4, 6, 8, 10, 12], yticks: [0, 2, 4, 6, 8, 10, 12] });
+  if (st.gap > 0.01 && Math.abs(qd - qs) > 0.15) {
+    const col = qs > qd ? sdAmber : sdRed;
+    s += g.band(Math.min(qd, qs), Math.max(qd, qs), p - 0.35, p + 0.35, col, 0.55 * st.gap);
+  }
+  s += g.curve([[Math.max(0, A - 12), Math.min(12, A)], [Math.min(12, A), Math.max(0, A - 12)]], sdBlue, { w: 2.6 });
+  s += fade(st.sOn, g.curve([[0, B], [12 - B, 12]], sdOrange, { w: 2.6 }));
+  s += g.guide({ y: p }, '#666666', '$' + Math.round(p));
+  s += g.dot(qd, p, sdBlue, { r: 3 });
+  s += fade(st.sOn, g.dot(qs, p, sdOrange, { r: 3 }));
+  return { g, svg: s };
+}
+
+// ---- the picture: draw back to front, labels last ----
+function scene(st, m){
+  let s = '';
+  const p = st.p, qd = sdQd(st, p), qs = sdQs(st, p);
+  const nD = Math.round(qd), nS = Math.round(qs), sold = Math.min(nD, nS);
+  s += ground(21, -35, 0, 20, 24) + ground(26, 14, 0, 8, 26);
+  const G = sdGraph(st);
+  s += G.svg;
+  // seller behind the stall
+  let sv = person([5, -37, 0], { m: matOf('#7a5a3a'), arms: 'out' });
+  // stall table
+  sv += box(10, -50, 0, 32, -20, 1, MAT.wood, tone, 1.2);
+  sv += rod([12, -48, 1], [12, -48, 11], 0.8, MAT.wood) + rod([30, -22, 1], [30, -22, 11], 0.8, MAT.wood);
+  sv += rod([30, -48, 1], [30, -48, 11], 0.8, MAT.wood) + rod([12, -22, 1], [12, -22, 11], 0.8, MAT.wood);
+  sv += box(10, -50, 11, 32, -20, 13, MAT.wood, tone, 1.4);
+  s += sv;
+  // boxes on the table (quantity supplied)
+  let cs = '';
+  for (let i = 0; i < Math.min(nS, 12); i++) {
+    const unsold = st.gap > 0.5 && i >= sold;
+    const [x, y] = sdSlots[i];
+    cs += sdCrate(x, y, 13, unsold ? sdUnsoldM : sdCrateM);
+  }
+  s += fade(0.15 + 0.85 * st.sOn, cs);
+  // price tag on a post at the stall corner
+  s += rod([33, -18, 0], [33, -18, 24], 0.7, MAT.steel);
+  s += act('tag', box(33, -25, 22, 34, -11, 31, MAT.paper, tone, 1.4) + tx(34.1, -18, 28.6, 'Apples', 2.4, '#555555', 600) + tx(34.1, -18, 23.6, '$' + Math.round(p), 5, '#c8312b', 800));
+  // buyers queue (quantity demanded)
+  const people = [];
+  for (let i = 0; i < Math.min(nD, 12); i++) {
+    const y = -10 + i * 5.2, x = 24 + (i % 2) * 3;
+    let bm = sdBuyerM, sad = false, arms = 'down';
+    if (st.gap > 0.5 && st.sOn > 0.5) {
+      if (i < sold) { bm = sdMetM; arms = 'out'; }
+      else { bm = sdLeftM; sad = true; }
+    }
+    people.push({ at: [x, y, 0], svg: person([x, y, 0], { m: bm, sad, arms }) });
+  }
+  s += byDepth(people);
+  // speech bubbles make the surplus, shortage and match readable without the caption
+  if (st.gap > 0.5 && st.sOn > 0.5) {
+    if (nS - nD >= 1) s += bubble([5, -37, 15], 'Boxes left over', { dx: -18, dy: -22 });
+    else if (nD - nS >= 1) s += bubble([24 + ((nD - 1) % 2) * 3, -10 + (nD - 1) * 5.2, 15], 'None left for me', { dx: -14, dy: -20 });
+    else s += bubble([5, -37, 15], 'All sold', { dx: -18, dy: -22 });
+  }
+  // labels last
+  s += tag([34, -12, 31], 40, -34, 'Price tag');
+  s += tag([24, -10 + Math.max(0, nD - 1) * 5.2, 2], -6, 28, 'Buyers');
+  s += tag([22, -44, 18], 28, 14, 'Seller\'s boxes');
+  s += tag(G.g.pt(Math.min(11.5, 11 + st.d - 1.5), 1.5), 34, -6, 'Demand curve');
+  if (st.sOn > 0.5) s += tag(G.g.pt(9.5, 10.5 + st.s), 22, -8, 'Supply curve');
+  if (st.gap > 0.5 && Math.abs(qd - qs) > 0.5) s += tag(G.g.pt((qd + qs) / 2, p + 0.4), 0, -26, qs > qd ? 'Surplus' : 'Shortage');
+  return s;
+}
+
+// ---- sandbox (Try it yourself) ----
+function sdTick(st, dt, ui){
+  st.d += clamp((st.d2 ? 2 : 0) - st.d, -dt * 2, dt * 2);
+  st.s += clamp((st.s2 ? 2 : 0) - st.s, -dt * 2, dt * 2);
+  if (st.hold > 0) { st.hold -= dt; return; }
+  const e = sdEqP(st);
+  st.p += clamp(e - st.p, -dt * 1.2, dt * 1.2);
+}
+function sdObserve(st){
+  const p = st.p, qd = sdQd(st, p), qs = sdQs(st, p);
+  const P = '$' + p.toFixed(1);
+  if (qd - qs > 0.3) return 'At ' + P + ' buyers want ' + qd.toFixed(1) + ' boxes but sellers bring ' + qs.toFixed(1) + '. Shortage, so the price rises.';
+  if (qs - qd > 0.3) return 'At ' + P + ' sellers bring ' + qs.toFixed(1) + ' boxes but buyers want ' + qd.toFixed(1) + '. Surplus, so the price falls.';
+  return 'At ' + P + ' buyers want what sellers bring: ' + qd.toFixed(1) + ' boxes. The price stays put.';
+}
+
+mountLesson({
+  title: 'How do supply and demand set a price?',
+  level: 'adult',
+  guess: true,
+  autoZoom: true,
+  palette: MAT.wood,
+  state: { t: 0, p: 10, sOn: 0, gap: 0, d: 0, s: 0, d2: false, s2: false, hold: 0, pHand: 6 },
+  stats: st => [
+    { label: 'Price', value: '$' + st.p.toFixed(0), small: 'a box' },
+    { label: 'Buyers want', value: sdQd(st, st.p).toFixed(0), small: 'boxes' },
+    { label: 'Sellers bring', value: st.sOn > 0.5 ? sdQs(st, st.p).toFixed(0) : '-', small: 'boxes' },
+  ],
+  scene,
+  intro: 'One apple stall. Each figure is a buyer who wants one box today, and each crate on the table is a box the seller brings. The chart shows the same numbers. Change the price and watch both sides react.',
+  parts: {
+    'Price tag': 'The price the seller asks for one box. Buyers and the seller both react to it.',
+    'Buyers': 'Each figure wants one box at today\'s price. Fewer people want to buy when the price is higher.',
+    'Seller\'s boxes': 'The boxes the seller brings to market. A higher price makes it worth bringing more.',
+    'Demand curve': 'How many boxes buyers want at each price. It slopes down.',
+    'Supply curve': 'How many boxes sellers offer at each price. It slopes up.',
+    'Surplus': 'Boxes the seller brings that no buyer wants at this price. Shown in orange.',
+    'Shortage': 'Boxes buyers want that the seller does not bring at this price. Shown by grey buyers.',
+  },
+  steps: [
+    { title: 'Cheaper, more buyers', lit: ['Buyers', 'Demand curve'],
+      do: { label: 'Press the price tag to cut the price', part: 'tag', at: [34, -18, 27], hint: 'The tag on the post by the stall' },
+      say: 'As the price falls from $10 to $2, more people want a box. This is the law of demand: the lower the price, the more people want to buy. The blue demand curve slopes down.',
+      run(st, ui){ ui.tween({ p: 2 }, 2.5); } },
+    { title: 'Dearer, more boxes', lit: ['Seller\'s boxes', 'Supply curve'],
+      drag: { label: 'Drag to raise the price', secs: 3 }, zoom: null,
+      say: 'Now the seller. A higher price makes selling apples more profitable, so the seller brings more boxes to the table. This is the law of supply. The orange supply curve slopes up.',
+      run(st, ui){ ui.tween({ sOn: 1, p: 10 }, 3); } },
+    { title: 'Price too high', lit: ['Surplus', 'Seller\'s boxes'],
+      guess: { q: 'At $9 a box, what will you see at the stall?', choices: ['A line of buyers who cannot get a box', 'Boxes left over that nobody buys', 'Every box sold to a waiting buyer'], answer: 1,
+        why: 'At $9 the seller brings 8 boxes but only 2 people want one. The extra 6 boxes are a surplus.' },
+      say: 'At $9 the seller brings more boxes than buyers want. The orange boxes are a surplus. To sell them, sellers cut the price.',
+      run(st, ui){ ui.tween({ p: 9, gap: 1 }, 1.5); } },
+    { title: 'Price too low', lit: ['Shortage', 'Buyers'],
+      zoom: null,
+      do: { label: 'Press the price tag to drop it to $3', part: 'tag', at: [34, -18, 27], hint: 'The tag on the post by the stall' },
+      say: 'At $3 eight people want a box but the seller brings only two. The grey buyers go without. That is a shortage. The seller sees a chance to charge more, so the price rises.',
+      run(st, ui){ ui.tween({ p: 3 }, 1.5); } },
+    { title: 'The price settles', lit: ['Demand curve', 'Supply curve'],
+      guess: { q: 'Where does the price stop moving?', choices: ['At $10, the most anyone will pay', 'At $2, the least the seller will take', 'Where the boxes buyers want equal the boxes brought'], answer: 2,
+        why: 'Only where the two amounts match is there no surplus pushing the price down and no shortage pushing it up. Here that is $6 and 5 boxes.' },
+      drag: { label: 'Drag to let the price rise', secs: 3 },
+      say: 'Price rises until buyers want exactly what the seller brings: 5 boxes at $6. This is the equilibrium, where the two curves cross. At this price the market has no reason to move, so the price stays.',
+      run(st, ui){ ui.tween({ p: 6 }, 3); } },
+  ],
+  tryit: {
+    title: 'Try it yourself',
+    say: 'Set any price and let the market move it. Then add more buyers or a poor harvest and watch where the price settles.',
+    setup(st){ st.p = 6; st.sOn = 1; st.gap = 1; st.hold = 0; },
+    tick: sdTick,
+    observe: sdObserve,
+    controls: [
+      { type: 'range', key: 'pHand', label: 'Set the price', min: 2, max: 10, step: 1, format: v => '$' + v, onChange(st){ st.p = st.pHand; st.hold = 1.5; } },
+      { type: 'toggle', key: 'd2', label: 'More buyers want apples' },
+      { type: 'toggle', key: 's2', label: 'Poor harvest' },
+    ],
+  },
+  idea: 'Price moves until the amount buyers want equals the amount sellers bring: a surplus pushes it down, a shortage pushes it up.',
+  simplified: [
+    'One stall stands for a whole market. The model assumes no single seller is big enough to set the market price.',
+    'The numbers and straight-line curves are made up to show the idea. Real curves need not be straight lines.',
+    'The model shows which way a price moves, not how fast. Here it moves in seconds.',
+  ],
+  check: [
+    { q: 'At the current price, sellers bring more than buyers want. What happens next?', choices: ['The price tends to fall', 'The price tends to rise', 'The price stays the same'], answer: 0, why: 'A surplus leads sellers to cut prices to sell what they have.' },
+    { q: 'Apples become popular, so more people want them at every price. What happens next?', choices: ['Price and amount sold both rise', 'Price falls and amount sold rises', 'Nothing, because supply has not changed'], answer: 0, why: 'More demand at every price creates a shortage at the old price, so the price rises and sellers bring more.' },
+    { q: 'A frost ruins much of the apple harvest. What happens?', choices: ['Price falls and more apples are sold', 'Price rises and fewer apples are sold', 'Price rises and more apples are sold'], answer: 1, why: 'Less supply at every price creates a shortage at the old price. The price rises and fewer boxes change hands.' },
+  ],
+  sources: [
+    { title: 'OpenStax, Principles of Economics 3e, 3.1 Demand, supply and equilibrium', url: 'https://openstax.org/books/principles-economics-3e/pages/3-1-demand-supply-and-equilibrium-in-markets-for-goods-and-services', note: 'Laws of demand and supply, curve slopes, surplus, shortage, equilibrium.' },
+    { title: 'OpenStax, Principles of Economics 3e, 3.3 Changes in equilibrium', url: 'https://openstax.org/books/principles-economics-3e/pages/3-3-changes-in-equilibrium-price-and-quantity-the-four-step-process', note: 'A fall in supply gives a higher price and lower quantity; weather affects supply.' },
+    { title: 'UBC Economics 101, Market equilibrium (PDF)', url: 'https://econ101.sites.olt.ubc.ca/files/2014/08/MarketEqb-short.pdf', note: 'Equilibrium definition; a rise in demand causes a shortage and the price rises.' },
+    { title: 'Britannica, Supply and demand', url: 'https://www.britannica.com/topic/supply-and-demand', note: 'Price set by supply and demand; a demand shift raises price and quantity.' },
+    { title: 'Wikipedia, Supply and demand (backup)', url: 'https://en.wikipedia.org/wiki/Supply_and_demand', note: 'Model of price setting; competitive-market assumption; prices adjust until supply equals demand.' },
+  ],
+});
+</script>
+</body>
+</html>

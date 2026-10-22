@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: __TITLE__ Level: __LEVEL__. Facts: facts.md.
+   Real process: (one line per stage, from facts.md)
+   Sandbox facts: (the sourced what-ifs the sandbox follows) */
+
+// ---- geometry (prefix every name, e.g. xxBody, so nothing clashes with the engine) ----
+
+// ---- the picture: draw back to front, labels last ----
+function scene(st, m){
+  let s = '';
+  // s += ground(x, y, 0, r);                       // soft shadow under an object standing on the page
+  // s += act('part', ...);                          // a part the learner presses (a step's do.part)
+  // s += tag([x, y, z], dx, dy, 'Part name');       // labels last; every label has a parts entry
+  return s;
+}
+
+// ---- sandbox (Try it yourself): follows the sourced what-ifs exactly ----
+function xxTick(st, dt, ui){ }
+function xxObserve(st){ return ''; }
+
+mountLesson({
+  title: '__TITLE__',
+  level: '__LEVEL__',
+  guess: __GUESS__,
+  autoZoom: true,                                   // each step frames its lit parts
+  reveal: true,                                     // labels appear as their parts are introduced
+  palette: MAT.steel,
+  state: { t: 0 },
+  stats: st => [],
+  scene,
+  intro: '',
+  parts: {
+  },
+  steps: [
+    // { title: '', lit: [], do: { label: '', part: '', at: [x, y, z], hint: '' }, say: '', run(st, ui){ ui.tween({}, 1.2); } },
+    // { title: '', lit: [], drag: { label: 'Drag to ...', secs: 3 }, say: '', run(st, ui){ ui.tween({}, 3); } },
+    // { title: '', lit: [], zoom: { at: [x, y, z], k: 2.2 }, guess: { q: '', choices: ['', '', ''], answer: 1, why: '' }, say: '', run(st, ui){ } },
+  ],
+  tryit: {
+    say: '',
+    setup(st){ },
+    tick: xxTick,
+    observe: xxObserve,
+    controls: [
+      // { type: 'range', key: '', label: '', min: 0, max: 100, step: 10, format: v => v + '%' },
+      // { type: 'toggle', key: '', label: '' },
+    ],
+  },
+  idea: '',
+  simplified: [
+  ],
+  check: [
+    // { q: '', choices: ['', '', ''], answer: 0, why: '' },
+  ],
+  sources: [
+    // { title: '', url: '', note: '' },
+  ],
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How does a plant make its own food?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: photosynthesis, as a potted plant standing on the page. Level: student. Facts: photosynthesis.facts.md.
+   Real process: light reaches the leaves (chlorophyll absorbs it) -> roots take in water, xylem carries it up ->
+   carbon dioxide enters through stomata -> light energy splits water, oxygen leaves through stomata ->
+   sugar is built from carbon dioxide -> phloem carries sugar to the roots (used or stored as starch) ->
+   the plant builds itself mostly from carbon dioxide taken from the air.
+   Tokens: blue drops = water, grey balls = carbon dioxide, white balls = oxygen, small white cubes = sugar. */
+const PX0 = 44, PY0 = 54;                 // plant centre (pot axis)
+const POT_R = 15, POT_TOP = 30, SOIL = 25, BH = 0;
+const STEM_TOP = 74;
+const pFrac = v => v - Math.floor(v);
+const STEM_GREEN = { l: '#8fc266', m: '#5d9440', d: '#2f5a22' };
+const LEAF = { l: '#8fc860', m: '#4f8f34', d: '#24501a' };           // a living leaf: bright where the light hits
+const ROOT = { l: '#f1e4cc', m: '#dcc6a1', d: '#a8875c' };
+const hash = (i, k = 1) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
+const CO2_M = { l: '#c9ccd1', m: '#9aa0a8', d: '#5f656d' };
+const O2_M = { l: '#ffffff', m: '#dfe9f2', d: '#9fb4c8' };
+const SUN_M = { l: '#ffe27a', m: '#ffc93c', d: '#d99a00' };
+const SUN = [18, 78, 84];
+
+// a leaf: a pointed oval lying on the plane through base B along direction D (midrib), widening along Wv
+function pLeaf(B, D, Wv, len, wid, scale = 1){
+  len *= scale; wid *= scale;
+  const n = 14, L = [], R = [];
+  for (let i = 0; i <= n; i++){ const t = i / n, w = wid * Math.pow(Math.sin(Math.PI * t), .85) * (t < .5 ? 1 : 1 - (t - .5) * .5);
+    const c = add(B, D.map(v => v * len * t)); L.push(add(c, Wv.map(v => v * w))); R.push(add(c, Wv.map(v => -v * w))); }
+  let nrm = norm(cross(D, Wv)); if (!vis(nrm)) nrm = nrm.map(v => -v);
+  // fold: the edges lift a little above the midrib, so each half catches the light differently
+  const lift = (p, i) => add(p, nrm.map(v => v * wid * .22 * Math.sin(Math.PI * i / n)));
+  const Lf = L.map(lift), Rf = R.map(lift), mid = Array.from({ length: n + 1 }, (_, i) => add(B, D.map(v => v * len * i / n)));
+  const pts = [...Lf, ...Rf.slice().reverse()];
+  const nL = norm(cross(D, sub(Lf[n >> 1], mid[n >> 1]))), nR = norm(cross(sub(Rf[n >> 1], mid[n >> 1]), D));
+  const fix = v => vis(v) ? v : v.map(x => -x);
+  const tip = add(B, D.map(v => v * len));
+  const g = 'lg' + (++_clipN), [bx, by] = P(...B), [tx2, ty2] = P(...tip);
+  const veins = [.22, .4, .58, .74].map(t => { const c = add(B, D.map(v => v * len * t)), w = wid * .62 * Math.sin(Math.PI * Math.min(.95, t + .08));
+    const e = t2 => add(add(c, D.map(v => v * len * .14)), Wv.map(v => v * w * t2));
+    return `<path d="${pd([c, lift(e(1), n * t), ], false)}M${P(...c).map(f).join(' ')}L${P(...lift(e(-1), n * t)).map(f).join(' ')}" fill="none" stroke="#d8edbc" stroke-width=".45" stroke-linecap="round" opacity=".8"/>`; }).join('');
+  return { pts, nrm, mid: add(B, D.map(v => v * len * .5)), tip,
+    svg: `<defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="${f(bx)}" y1="${f(by)}" x2="${f(tx2)}" y2="${f(ty2)}"><stop offset="0" stop-color="#1f3d14" stop-opacity=".35"/><stop offset=".45" stop-color="#1f3d14" stop-opacity="0"/><stop offset="1" stop-color="#fffbd0" stop-opacity=".18"/></linearGradient></defs>`
+       + fill(pd([...Lf, ...mid.slice().reverse()]), tone(fix(nL), LEAF)) + fill(pd([...Rf, ...mid.slice().reverse()]), tone(fix(nR), LEAF))
+       + fill(pd(pts), `url(#${g})`) + veins
+       + `<path d="${pd(mid.slice(0, n), false)}" fill="none" stroke="#e4f3cf" stroke-width=".8" stroke-linecap="round" opacity=".9"/>`
+       + ink(pd(pts), 1.25) };
+}
+const leafA = () => pLeaf([PX0 + 1, PY0, 54], norm([1, .15, .32]), norm([-.15, 1, 0]), 36, 11);
+const leafB = () => pLeaf([PX0, PY0 + 1, 62], norm([-.1, 1, .45]), norm([1, .1, 0]), 26, 8.5);
+const leafC = (g) => pLeaf([PX0, PY0, STEM_TOP - 1], norm([.35, -.55, .75]), norm([.85, .5, 0]), 22, 7.5, g);
+const STOMA = () => { const A = leafA(); return lerp3(A.mid, A.tip, .08); };
+
+function pToken(p, kind, r = 2.1){
+  const [X, Y] = P(...p), R = r * 1.2247;
+  if (kind === 'water') return `<path d="M${f(X)} ${f(Y - R * 1.5)}C${f(X + R)} ${f(Y - R * .3)} ${f(X + R)} ${f(Y + R)} ${f(X)} ${f(Y + R)}C${f(X - R)} ${f(Y + R)} ${f(X - R)} ${f(Y - R * .3)} ${f(X)} ${f(Y - R * 1.5)}Z" fill="${WATER.l}" stroke="${WATER.d}" stroke-width=".8"/>`;
+  if (kind === 'sugar') return `<rect x="${f(X - R * .8)}" y="${f(Y - R * .8)}" width="${f(R * 1.6)}" height="${f(R * 1.6)}" rx="${f(R * .25)}" fill="#ffffff" stroke="${INK}" stroke-width=".8"/>`;
+  return ball(p, r, kind === 'co2' ? CO2_M : O2_M, .8);
+}
+// a token drawn at the origin, for the legend
+function pTokenAt(kind){
+  if (kind === 'water') return `<path d="M0 -4C2.6 -.8 2.6 2.6 0 2.6C-2.6 2.6 -2.6 -.8 0 -4Z" fill="${WATER.l}" stroke="${WATER.d}" stroke-width="1"/>`;
+  if (kind === 'sugar') return `<rect x="-2.4" y="-2.4" width="4.8" height="4.8" rx=".8" fill="#ffffff" stroke="${INK}" stroke-width="1"/>`;
+  const m = kind === 'co2' ? CO2_M : O2_M;
+  return `<circle r="3" fill="${m.m}" stroke="${INK}" stroke-width="1"/><circle cx="-.6" cy="-.6" r="2.1" fill="${m.l}"/>`;
+}
+// tokens flowing along a path while amt > 0
+function pFlow(path, kind, amt, st, n, speed, label){
+  if (amt <= .01) return '';
+  let s = '';
+  for (let i = 0; i < n; i++){ const t = pFrac(st.t * speed + i / n), p = along(path, t);
+    s += `<g opacity="${(Math.min(1, amt) * Math.min(1, Math.sin(Math.PI * t) * 2.2)).toFixed(2)}">${pToken(p, kind)}</g>`;
+  }
+  return s;
+}
+
+function scene(st){
+  let s = '';
+  const potRing = (z, r = POT_R) => on(PZ(z), ellUV(PX0, PY0, r, r, 40));
+  s += ground(PX0, PY0, BH, POT_R);
+
+  // the sun, in the sky at the back left; press it to switch the light on
+  const sunR = 7, [SX, SY] = P(...SUN), R0 = sunR * 1.25, lt = st.light, sg = 'sg' + (++_clipN), hg = 'sh' + _clipN;
+  let sun = `<defs><radialGradient id="${sg}" cx=".38" cy=".36" r=".7"><stop offset="0" stop-color="${mix('#f4f5f7', '#fffbe0', lt)}"/><stop offset=".55" stop-color="${mix('#e3e5e9', '#ffd84a', lt)}"/><stop offset="1" stop-color="${mix('#c9cdd3', '#f3a712', lt)}"/></radialGradient>`
+    + `<radialGradient id="${hg}"><stop offset="0" stop-color="#ffd84a" stop-opacity=".55"/><stop offset=".45" stop-color="#ffe27a" stop-opacity=".22"/><stop offset="1" stop-color="#fff3c0" stop-opacity="0"/></radialGradient></defs>`;
+  if (lt > .02){ sun += `<circle cx="${f(SX)}" cy="${f(SY)}" r="${f(R0 * (3 + .12 * Math.sin(st.t * 2)))}" fill="url(#${hg})" opacity="${lt.toFixed(2)}"/>`;
+    for (let i = 0; i < 12; i++){ const a = i / 12 * 2 * Math.PI + st.t * .15, r0 = R0 * 1.3, r1 = R0 * (1.85 + .18 * Math.sin(st.t * 2.4 + i * 1.7)), w = R0 * .13;
+      const px = -Math.sin(a) * w, py = Math.cos(a) * w;
+      sun += `<path d="M${f(SX + Math.cos(a) * r0 + px)} ${f(SY + Math.sin(a) * r0 + py)}L${f(SX + Math.cos(a) * r1)} ${f(SY + Math.sin(a) * r1)}L${f(SX + Math.cos(a) * r0 - px)} ${f(SY + Math.sin(a) * r0 - py)}Z" fill="#f7b51e" opacity="${(lt * .85).toFixed(2)}"/>`; } }
+  sun += `<circle cx="${f(SX)}" cy="${f(SY)}" r="${f(R0)}" fill="url(#${sg})" stroke="${lt > .5 ? '#b8770a' : '#9aa0a8'}" stroke-width="1"/>`;
+  s += act('sun', sun);
+
+  // see-through pot: far wall, soil, roots, water in the soil, then the glass front
+  const GLASS = { l: '#f4fafb', m: '#dcebee', d: '#b4ccd2' };
+  // far wall of the glass (seen from inside), then the soil through the glass
+  s += `<g opacity=".85">${loft(potRing(BH + 1.2, POT_R - .8), potRing(POT_TOP, POT_R - .8), n => toneI(n, GLASS), true)}</g>`;
+  const SOILC = { l: '#8a6a4e', m: '#6b4f38', d: '#3f2c1e' };
+  s += `<g opacity=".72">${loft(potRing(BH + 1.4, POT_R - 1), potRing(SOIL, POT_R - 1), n => toneI(n, SOILC))}</g>`;
+  const potOutline = sp(hull([...potRing(BH + 1.4, POT_R - 1), ...potRing(SOIL, POT_R - 1)].map(p => P(...p))));
+  let rs = '';
+  // grit in the soil, seen through the glass
+  for (let i = 0; i < 70; i++){ const a = hash(i) * Math.PI * 2, r = (POT_R - 1.4) * Math.sqrt(hash(i, 2)), z = BH + 2 + hash(i, 3) * (SOIL - BH - 3);
+    const [X, Y] = P(PX0 + Math.cos(a) * r, PY0 + Math.sin(a) * r, z);
+    rs += `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(.25 + hash(i, 4) * .45)}" fill="${hash(i, 5) > .5 ? '#b08d68' : '#3a281b'}" opacity=".55"/>`; }
+  // roots: pale and tapering, with fine side roots
+  const roots = [[[0, 0, 0], [4, 3, -6], [7, 5, -13], [8, 7, -18]], [[0, 0, 0], [-4, 2, -7], [-6, 6, -14], [-7, 8, -19]], [[0, 0, 0], [2, -4, -6], [3, -7, -12], [5, -9, -17]], [[0, 0, 0], [0, 1, -9], [1, 3, -17], [1, 4, -21]]];
+  for (const r of roots){ const pts = r.map(([a, b, c]) => [PX0 + a, PY0 + b, SOIL + c]);
+    for (let j = 0; j < pts.length - 1; j++){ const w = 2.6 * (1 - j / (pts.length - 1)) + .5;
+      rs += `<path d="${pd([pts[j], pts[j + 1]], false)}" fill="none" stroke="${ROOT.d}" stroke-width="${f(w + .7)}" stroke-linecap="round"/><path d="${pd([pts[j], pts[j + 1]], false)}" fill="none" stroke="${ROOT.l}" stroke-width="${f(w)}" stroke-linecap="round"/>`;
+      if (j > 0){ const m0 = lerp3(pts[j], pts[j + 1], .4); rs += `<path d="${pd([m0, add(m0, [hash(j + r[1][0], 7) * 4 - 2, hash(j + r[1][1], 8) * 4 - 2, -3])], false)}" fill="none" stroke="${ROOT.d}" stroke-width=".55" stroke-linecap="round"/>`; } } }
+  // starch store in the roots (grows as sugar arrives)
+  if (st.starch > .02){ const [X, Y] = P(PX0 + 1, PY0 + 2, SOIL - 11); rs += `<ellipse cx="${f(X)}" cy="${f(Y)}" rx="${f(3.4 * st.starch + .5)}" ry="${f(2.4 * st.starch + .4)}" fill="#fffbea" stroke="${ROOT.d}" stroke-width=".9"/>`; }
+  s += `<clipPath id="pc"><path d="${potOutline}"/></clipPath><g clip-path="url(#pc)">${rs}</g>`;
+  // the soil's top: dark, crumbly
+  const top = potRing(SOIL, POT_R - 1), tg = 'tg' + (++_clipN), [TX, TY] = P(PX0, PY0, SOIL);
+  let crumbs = '';
+  for (let i = 0; i < 46; i++){ const a = hash(i, 9) * Math.PI * 2, r = (POT_R - 2) * Math.sqrt(hash(i, 10)), [X, Y] = P(PX0 + Math.cos(a) * r, PY0 + Math.sin(a) * r, SOIL);
+    crumbs += `<ellipse cx="${f(X)}" cy="${f(Y)}" rx="${f(.5 + hash(i, 11) * .7)}" ry="${f(.3 + hash(i, 12) * .4)}" fill="${hash(i, 13) > .45 ? '#a07c58' : '#3b2a1c'}" opacity=".7"/>`; }
+  s += `<defs><radialGradient id="${tg}" gradientUnits="userSpaceOnUse" cx="${f(TX - 6)}" cy="${f(TY - 3)}" r="${f(POT_R * 1.6)}"><stop offset="0" stop-color="#8d6c4f"/><stop offset="1" stop-color="#4f3826"/></radialGradient></defs>`
+     + fill(pd(top), `url(#${tg})`) + crumbs + ink(pd(top), .7);
+  // the glass front: a faint tint, a thick rim, and two highlights where it catches the light
+  s += `<g opacity=".28">${loft(potRing(BH, POT_R), potRing(POT_TOP, POT_R), n => toneI(n, GLASS))}</g>`;
+  const hl = (a, w, o) => { const c = Math.cos(a), d = Math.sin(a);
+    return `<path d="${pd([[PX0 + POT_R * c, PY0 + POT_R * d, BH + 2.5], [PX0 + POT_R * c, PY0 + POT_R * d, POT_TOP - 2]], false)}" stroke="#ffffff" stroke-width="${w}" stroke-linecap="round" opacity="${o}" fill="none"/>`; };
+  s += hl(-.62, 2.6, .85) + hl(-.42, .9, .7) + hl(1.05, 1.4, .45);
+  s += fill(pd([...potRing(POT_TOP, POT_R), ...potRing(POT_TOP, POT_R - 1).reverse()]), 'rgba(255,255,255,.55)', 'fill-rule="evenodd"');
+  s += hullInk([...potRing(BH), ...potRing(POT_TOP)], 1.9) + ink(pd(potRing(POT_TOP)), 1.15) + ink(pd(potRing(POT_TOP, POT_R - 1)), .6);
+
+  // stem and leaves, back to front
+  s += rod([PX0, PY0, SOIL - 1], [PX0, PY0, STEM_TOP], 1.9, STEM_GREEN, tone, 1, 1.15, 20);
+  const lA = leafA(), lB = leafB(), lC = leafC(1), parts = [ { at: lC.mid, svg: lC.svg }, { at: lA.mid, svg: lA.svg }, { at: lB.mid, svg: lB.svg } ];
+  if (st.grow > .02){ const lD = pLeaf([PX0, PY0, STEM_TOP - 6], norm([-.55, .2, .8]), norm([.3, .95, 0]), 14, 5, st.grow); parts.push({ at: lD.mid, svg: lD.svg }); }
+  s += byDepth(parts);
+  // stomata: tiny openings on the big leaf
+  const st0 = STOMA();
+  // tap them to let air in (a bigger see-through circle makes them easy to hit)
+  let sto = ''; const [SX0, SY0] = P(...st0);
+  for (const [du, dv] of [[0, 0], [3.5, 1.4], [-2.8, 2]]){ const c = add(st0, [du * .2, dv * .5 + du * .3, 0]);
+    sto += `<path d="${pd(on(PZ(c[2] + .2), ellUV(c[0], c[1], .9, .5, 10)))}" fill="${MAT.leaf.d}" stroke="${INK}" stroke-width=".4"/>`; }
+  s += act('stomata', sto + `<circle cx="${f(SX0)}" cy="${f(SY0)}" r="5" fill="#fff" fill-opacity="0"/>`);
+
+  // light rays from the sun to the leaves
+  if (st.light > .05){
+    const o = st.light.toFixed(2);
+    s += `<g opacity="${o}">` + [lA.mid, lB.mid, lC.mid].map(m => arrow3([lerp3(SUN, m, .18), lerp3(SUN, m, .9)], 1.3, '#f2b400', { dash: true, phase: st.t * 1.2, head: 4 })).join('') + '</g>';
+  }
+  // water: soil -> roots -> up the stem (xylem) -> into the big leaf
+  s += pFlow([[PX0 + 3, PY0 + 2, SOIL - 12], [PX0 - 1.4, PY0 + 1.4, SOIL], [PX0 - 1.4, PY0 + 1.4, 54], lA.mid], 'water', st.water, st, 6, .35, 'water');
+  // carbon dioxide: from the air on the right into the stomata
+  s += pFlow([[PX0 + 32, PY0 - 30, 74], [PX0 + 22, PY0 - 16, 62], st0], 'co2', st.co2, st, 5, .3, 'CO2');
+  // oxygen: out of the stomata, up into the air
+  s += pFlow([st0, [PX0 + 26, PY0 - 6, 70], [PX0 + 32, PY0 - 14, 88]], 'o2', st.o2, st, 5, .3, 'O2');
+  // sugar: from the leaf down the stem (phloem) to the roots
+  s += pFlow([lA.mid, [PX0 + 1.6, PY0 - 1.6, 52], [PX0 + 1.6, PY0 - 1.6, SOIL], [PX0 + 1, PY0 + 2, SOIL - 11]], 'sugar', st.sugarFlow, st, 6, .28, 'sugar');
+
+  // legend for the moving tokens (only the ones moving now), in the empty sky on the right
+  const leg = [['water', 'Water', st.water], ['co2', 'Carbon dioxide', st.co2], ['o2', 'Oxygen', st.o2], ['sugar', 'Sugar', st.sugarFlow]].filter(x => x[2] > .05);
+  if (leg.length){ const [LX, LY] = P(PX0 + 22, PY0 - 18, 104), k = INK_K * LABEL_K * 1.3, row = 10 * k;
+    leg.forEach(([kind, name], i) => { const y = LY + i * row; s += `<g transform="translate(${f(LX)} ${f(y)}) scale(${(k).toFixed(3)})">${pTokenAt(kind)}<text x="7" y="3" font-size="7.5" font-family="system-ui,sans-serif" font-weight="600" fill="${INK}">${name}</text></g>`; }); }
+  // labels
+  s += tag([SUN[0], SUN[1] - 5, SUN[2] - 6], 44, 30, 'Sun');
+  s += tag(lerp3(lA.mid, lA.tip, .5), 40, -22, 'Leaf');
+  s += tag(st0, 60, 14, 'Stomata');
+  s += tag([PX0, PY0 + 1, 40], -56, -10, 'Stem');
+  s += tag([PX0 - 4, PY0 + 4, SOIL - 9], -58, 12, 'Roots');
+  return s;
+}
+
+// tween state keys (the engine's clock st.t keeps tokens and sun rays moving, even between steps)
+function pAnim(ui, targets, secs, after){
+  const st = ui.st, from = {}; for (const k in targets) from[k] = st[k]; let t = 0;
+  ui.animate(dt => { t = Math.min(1, t + dt / secs); const e = ease(t);
+    for (const k in targets) st[k] = from[k] + (targets[k] - from[k]) * e; return t < 1; }, after);
+}
+
+// Try it yourself: the slowest factor sets the rate (facts 11 and 12)
+const CO2_LEVEL = [0, .35, .65, 1];
+function pTick(st, dt){
+  const lightF = st.lightPct / 100, co2F = CO2_LEVEL[st.co2Lvl];
+  st.rate = Math.min(lightF, co2F);
+  st.light = lightF; st.water = st.rate > 0 ? .6 + .4 * st.rate : .2; st.co2 = co2F; st.o2 = st.rate; st.sugarFlow = st.rate;
+  st.sugar += st.rate * dt * 3; st.o2n += st.rate * dt * 3;
+}
+function pObserve(st){
+  const lightF = st.lightPct / 100, co2F = CO2_LEVEL[st.co2Lvl];
+  if (lightF === 0) return 'No light, so no sugar is made and no oxygen comes out.';
+  const speed = st.rate > .8 ? 'fast' : st.rate > .45 ? 'at a medium speed' : 'slowly';
+  if (lightF > co2F + .02) return `Sugar is being made ${speed}. More light won’t help now, because carbon dioxide is the limit.`;
+  if (co2F > lightF + .02) return `Sugar is being made ${speed}. Light is the limit, so more light would speed it up.`;
+  return `Sugar is being made ${speed}. Light and carbon dioxide are both at the limit.`;
+}
+
+mountLesson({
+  title: 'How does a plant make its own food?',
+  level: 'student',
+  palette: MAT.leaf,
+  state: { t: 0, light: 0, water: 0, co2: 0, o2: 0, sugarFlow: 0, starch: 0, grow: 0, sugar: 0, o2n: 0, lightPct: 100, co2Lvl: 2, rate: 0 },
+  stats: st => [{ label: 'Light', value: st.light > .5 ? 'On' : 'Off', small: true }, { label: 'Sugar made', value: String(Math.floor(st.sugar)) }, { label: 'Oxygen out', value: String(Math.floor(st.o2n)) }],
+  scene,
+  intro: 'A plant can’t eat, so how does it get food? It makes its own, using light, water and a gas from the air. This is called photosynthesis. Switch on the sun to start.',
+  parts: {
+    'Sun': 'Gives the light energy the plant needs. With no light, a plant can’t make food.',
+    'Leaf': 'Where most of the food is made. Its cells hold chloroplasts, filled with green chlorophyll that absorbs light.',
+    'Stomata': 'Tiny holes in the leaf. Carbon dioxide goes in; oxygen and water vapour come out.',
+    'Stem': 'Holds the leaves up to the light. Tubes called xylem carry water up; tubes called phloem carry sugar to other parts.',
+    'Roots': 'Take in water from the soil. They also receive sugar from the leaves, and can store it as starch.',
+  },
+  steps: [
+    { title: 'Light', lit: ['Sun', 'Leaf'],
+      do: { label: 'Switch on the sun', part: 'sun', at: SUN, hint: 'Give the plant some light.' },
+      say: 'Sunlight lands on the leaves. Their cells hold tiny parts called chloroplasts, filled with a green substance called chlorophyll. Chlorophyll absorbs red and blue light and reflects green, which is why leaves look green.',
+      run(st, ui){ pAnim(ui, { light: 1 }, 1.2); } },
+    { title: 'Water', lit: ['Roots', 'Stem'],
+      drag: { label: 'Drag to draw water up the stem', secs: 3 },
+      say: 'The roots take in water from the soil. Narrow tubes in the stem, called xylem, carry the water up to the leaves.',
+      run(st, ui){ pAnim(ui, { water: 1 }, 3); } },
+    { title: 'Carbon dioxide', lit: ['Stomata'], zoom: { at: [PX0 + 20, PY0 - 4, 58], k: 2 },
+      do: { label: 'Let air into the leaf', part: 'stomata', at: STOMA(), hint: 'Tap the tiny holes on the leaf to let air in.' },
+      say: 'Carbon dioxide, a gas in the air, enters the leaf through tiny holes called stomata.',
+      run(st, ui){ pAnim(ui, { co2: 1 }, 2.4); } },
+    { title: 'Oxygen out', lit: ['Stomata', 'Leaf'], zoom: { at: [PX0 + 20, PY0 - 4, 58], k: 2 },
+      guess: { q: 'The plant is about to give off oxygen. Where does that oxygen come from?',
+        choices: ['The carbon dioxide', 'The water', 'The soil'], answer: 1,
+        why: 'Experiments that tracked marked oxygen atoms showed that all the oxygen a plant gives off comes from water, not from carbon dioxide.' },
+      say: 'The chloroplasts use the light’s energy to split water. The oxygen from the water leaves the leaf through the stomata and goes into the air.',
+      run(st, ui){ pAnim(ui, { o2: 1, o2n: 12 }, 2.6); } },
+    { title: 'Sugar', lit: ['Leaf', 'Stem', 'Roots'],
+      drag: { label: 'Drag to make sugar', secs: 3 },
+      say: 'The energy is then used to build sugar from carbon dioxide. Sugar is the plant’s food. Tubes called phloem carry sugar to the roots and other parts, where it is used for energy or stored as starch.',
+      run(st, ui){ pAnim(ui, { sugarFlow: 1, sugar: 12, starch: 1, o2n: 18 }, 3); } },
+    { title: 'Built from air', lit: ['Leaf'],
+      guess: { q: 'A small tree grows into a big one. Where does most of its new mass come from?',
+        choices: ['The soil', 'Carbon dioxide from the air', 'Sunlight'], answer: 1,
+        why: 'Most of a plant’s mass comes from carbon dioxide in the air. In a famous experiment, a tree gained about 165 pounds while its soil lost only about 2 ounces, so the mass didn’t come from the soil. Later scientists found that the carbon comes from the air.' },
+      say: 'The plant uses its sugar to build new leaves, stems and roots. So most of the solid stuff in a plant (everything except its water) comes from carbon dioxide in the air, not from the soil.',
+      run(st, ui){ pAnim(ui, { grow: 1, sugar: 20, o2n: 26 }, 2.4); } },
+  ],
+  tryit: {
+    say: 'Change the light and the carbon dioxide. Watch how fast the plant makes sugar, and find what limits it.',
+    setup(st){ Object.assign(st, { lightPct: 100, co2Lvl: 2, water: .8, starch: 1, grow: 1 }); pTick(st, 0); },
+    tick: pTick,
+    observe: pObserve,
+    controls: [
+      { type: 'range', key: 'lightPct', label: 'Light', min: 0, max: 100, step: 10, format: v => v === 0 ? 'Dark' : v + '%' },
+      { type: 'range', key: 'co2Lvl', label: 'Carbon dioxide', min: 1, max: 3, step: 1, format: v => ['', 'Low', 'Normal', 'High'][v] },
+    ],
+  },
+  idea: 'A plant uses light energy to turn water and carbon dioxide from the air into sugar, its food, and gives off oxygen.',
+  simplified: [
+    'Photosynthesis happens inside chloroplasts in the leaf cells. Here it is shown on the outside of the leaf.',
+    'The tokens show where things go, not how many molecules move. Real stomata are far too small to see without a microscope.',
+    'The plant is in a see-through pot so you can see the roots.',
+    'Temperature also affects the speed of photosynthesis. The sandbox only changes light and carbon dioxide, and uses a simple rule: the slowest factor sets the speed.',
+  ],
+  check: [
+    { q: 'Which gas does a plant take in through its stomata to make sugar?',
+      choices: ['Carbon dioxide', 'Oxygen', 'Nitrogen'], answer: 0,
+      why: 'Carbon dioxide enters through the stomata, and oxygen comes out.' },
+    { q: 'Why do most leaves look green?',
+      choices: ['Chlorophyll absorbs green light', 'Chlorophyll reflects green light', 'Leaves are full of green water'], answer: 1,
+      why: 'Chlorophyll absorbs red and blue light and reflects green, so green light reaches your eyes.' },
+    { q: 'A plant has very bright light but very little carbon dioxide. What happens?',
+      choices: ['It makes sugar at top speed because the light is bright', 'Sugar-making is limited by the carbon dioxide', 'Bright light stops photosynthesis'], answer: 1,
+      why: 'When one factor runs short, it sets the limit. More light won’t help until there is more carbon dioxide.' },
+  ],
+  sources: [
+    { title: 'National Geographic Education: Photosynthesis', url: 'https://education.nationalgeographic.org/resource/photosynthesis/', note: 'Chloroplasts, chlorophyll and colour, inputs and outputs, sugar built from carbon dioxide' },
+    { title: 'University of Leeds Enviroweb: Plants, roots and stomata', url: 'https://see.leeds.ac.uk/enviroweb/biosphere/3_photosynthesis/photo4.php', note: 'Stomata, water taken up by roots and carried up in xylem' },
+    { title: 'Life, 11th edition (Sadava et al.), section 10.4', url: 'https://digfir-published.macmillanusa.com/life11e/life11e_ch10_4.html', note: 'The oxygen comes from water' },
+    { title: 'DoDEA Biology: transport in plants', url: 'https://content.dodea.edu/VS/HS/Aventa/Biology/BIOx-HS-A09/b/unit8/section3_10.html', note: 'Phloem carries sugar to the roots; extra sugar is stored as starch' },
+    { title: 'MIT BLOSSOMS: where does a plant’s mass come from?', url: 'https://web.mit.edu/blossoms/sites/default/files/video/transcript/vandiver-transcript.pdf', note: 'Most of the mass comes from carbon dioxide in the air' },
+    { title: 'OpenStax Biology 2e, 8.1 Overview of photosynthesis', url: 'https://openstax.org/books/biology-2e/pages/8-1-overview-of-photosynthesis', note: 'Photosynthesis takes place mostly in leaves, inside chloroplasts' },
+    { title: 'OpenStax Biology 2e, 30.5 Transport of water and solutes', url: 'https://openstax.org/books/biology-2e/pages/30-5-transport-of-water-and-solutes-in-plants', note: 'Phloem carries sugars such as sucrose' },
+    { title: 'Saint John’s University: van Helmont’s experiment', url: 'https://faculty.csbsju.edu/ssaupe/biol115/van_helmont.htm', note: 'The tree gained weight while the soil lost about 2 ounces' },
+    { title: 'Britannica: Stem (plant)', url: 'https://www.britannica.com/science/stem-plant', note: 'The stem supports the leaves' },
+    { title: 'Royal Society of Chemistry: Rate of photosynthesis, limiting factors', url: 'https://edu.rsc.org/download?ac=12620', note: 'No light means no photosynthesis; light, carbon dioxide and temperature limit the rate' },
+  ],
+});
+</script>
+</body>
+</html>

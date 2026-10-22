@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why does the Moon have phases?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: Why does the Moon have phases? Level: kid. Facts: facts.md.
+   Real process: the Sun always lights the half of the Moon facing it; the Moon goes around Earth in about 29.5 days
+   (new moon to new moon); from Earth we see a different share of that lit half as the Moon moves: new, crescent,
+   first quarter, gibbous, full, then back again. Earth's shadow does not cause phases.
+   Sandbox facts: moving the Moon around its path changes how much of the lit half faces Earth; lit share = (1 - cos p) / 2. */
+
+// ---- geometry (plan view: x to the right, y down the screen, looking down on Earth's north pole) ----
+const mpER = 17, mpMR = 9, mpOR = 48;            // Earth, Moon, Moon's path radius (not to scale)
+const mpSX = -92, mpSR = 28;                        // the Sun, far to the left (really much farther and bigger)
+const mpIN = [400, 0, 0], mpIR = 7;                 // close-up of the Moon as seen from Earth
+const mpDAYS = 29.5;
+
+function mpPos(p){ const a = p * Math.PI / 180; return [-mpOR * Math.cos(a), mpOR * Math.sin(a), 0]; }
+function mpDisc(c, r, col, w){ return shape(on(PZ(0), ellUV(c[0], c[1], r, r, 48)), col, w); }
+function mpHalf(c, r, col){ return shape(on(PZ(0), arcUV(c[0], c[1], r, 90, 270, 24)), col, 0); }   // the half facing the Sun (left)
+function mpLitShare(p){ return (1 - Math.cos(p * Math.PI / 180)) / 2; }
+function mpName(p){
+  const q = ((p % 360) + 360) % 360;
+  if (q < 10 || q > 350) return 'New moon';
+  if (q < 80) return 'Waxing crescent';
+  if (q <= 100) return 'First quarter';
+  if (q < 170) return 'Waxing gibbous';
+  if (q <= 190) return 'Full moon';
+  if (q < 260) return 'Waning gibbous';
+  if (q <= 280) return 'Last quarter';
+  return 'Waning crescent';
+}
+// what the Moon looks like from Earth (Northern Hemisphere): lit on the right while it grows
+function mpFace(c, r, p, lit){
+  const a = p * Math.PI / 180, k = Math.cos(a), grow = Math.sin(a) >= 0, pts = [], back = [], N = 28;
+  for (let i = 0; i <= N; i++){
+    const v = -r + 2 * r * i / N, w = Math.sqrt(Math.max(0, r * r - v * v));
+    if (grow){ pts.push([c[0] + w, c[1] + v, 0]); back.push([c[0] + k * w, c[1] + v, 0]); }
+    else { pts.push([c[0] - w, c[1] + v, 0]); back.push([c[0] - k * w, c[1] + v, 0]); }
+  }
+  let s = mpDisc(c, r, '#3b3d45', 1.2);
+  if (mpLitShare(p) > .004) s += shape(pts.concat(back.reverse()), mix('#3b3d45', '#efeadb', lit), 0);
+  return s + ink(pd(on(PZ(0), ellUV(c[0], c[1], r, r, 48))), 1.4);
+}
+
+// ---- the picture: draw back to front, labels last ----
+function scene(st, m){
+  let s = '';
+  const sun = st.sun, mp = mpPos(st.p);
+  // the Sun, glowing
+  const sc = P(mpSX, 0, 0), hg = gid('mphalo'), sg = gid('mpsun');
+  s += `<defs><radialGradient id="${hg}"><stop offset="0" stop-color="#ffd84a" stop-opacity=".55"/><stop offset=".5" stop-color="#ffe27a" stop-opacity=".2"/><stop offset="1" stop-color="#fff3c0" stop-opacity="0"/></radialGradient>`
+     + `<radialGradient id="${sg}" cx=".4" cy=".38" r=".7"><stop offset="0" stop-color="${mix('#efe3c2', '#fffbe0', sun)}"/><stop offset=".6" stop-color="${mix('#dcc58e', '#ffd84a', sun)}"/><stop offset="1" stop-color="${mix('#c4a462', '#f3a712', sun)}"/></radialGradient></defs>`;
+  const R0 = Math.abs(P(mpSX + mpSR, 0, 0)[0] - sc[0]);
+  if (sun > .02) s += `<circle cx="${f(sc[0])}" cy="${f(sc[1])}" r="${f(R0 * (1.7 + .05 * Math.sin(st.t * 2)))}" fill="url(#${hg})" opacity="${sun.toFixed(2)}"/>`;
+  s += act('sun', `<circle cx="${f(sc[0])}" cy="${f(sc[1])}" r="${f(R0)}" fill="url(#${sg})" stroke="${INK}" stroke-width="1.6"/>`);
+  // sunlight: arrows moving to the right
+  if (sun > .02) for (const y of [-44, -22, 0, 22, 44]){
+    const x0 = Math.abs(y) < mpSR ? mpSX + Math.sqrt(mpSR * mpSR - y * y) + 3 : mpSX, x1 = 66;
+    s += fade(sun * .55, curve([[x0, y, 0], [x1, y, 0]], '#f0a818', 1.8) + shape([[x1, y - 2.6, 0], [x1 + 5, y, 0], [x1, y + 2.6, 0]], '#f0a818', 0));
+  }
+  // the Moon's path
+  s += curve(on(PZ(0), ellUV(0, 0, mpOR, mpOR, 72)), '#9aa3b2', 1, {dash: 3, close: true});
+  // Earth: day half facing the Sun, night half away
+  s += mpDisc([0, 0, 0], mpER, '#1f2d4d', 0);
+  s += mpHalf([0, 0, 0], mpER, mix('#1f2d4d', '#3f86d6', sun));
+  s += shape(on(PZ(0), ellUV(-4, -3, 3.2, 2.2, 20)), mix('#24402e', '#5fae5b', sun), 0)
+     + shape(on(PZ(0), ellUV(-3, 4, 2.4, 3, 20)), mix('#24402e', '#5fae5b', sun), 0)
+     + shape(on(PZ(0), ellUV(4, -2, 2, 2.6, 20)), '#26402f', 0);
+  s += ink(pd(on(PZ(0), ellUV(0, 0, mpER, mpER, 48))), 2);
+  // line of sight from Earth to the Moon
+  if (st.see > .02){
+    const d = norm(sub(mp, [0, 0, 0]));
+    s += fade(st.see, curve([add([0, 0, 0], d.map(v => v * (mpER + 1))), add(mp, d.map(v => -v * (mpMR + 1)))], '#c0392b', 1.4, {dash: 2.5}));
+  }
+  // faint copies where the Moon has already been (every eighth of the trip)
+  for (let g = 45; g < st.p - 20 && g < 360; g += 45){ const gp = mpPos(g);
+    s += fade(.4, mpDisc(gp, mpMR * .8, '#3b3d45', 0) + mpHalf(gp, mpMR * .8, mix('#3b3d45', '#efeadb', sun))); }
+  // the Moon: lit half always faces the Sun
+  s += mpDisc(mp, mpMR, '#3b3d45', 0) + mpHalf(mp, mpMR, mix('#3b3d45', '#efeadb', sun)) + ink(pd(on(PZ(0), ellUV(mp[0], mp[1], mpMR, mpMR, 40))), 1.8);
+  // close-up: what you see from Earth
+  if (st.see > .02){
+    const I = {at: [82, -40, 0], r: 34, src: mpIN, k: 3.4, from: mp};
+    s += fade(st.see, inset(I, () => mpFace(mpIN, mpIR, st.p, sun)));
+  }
+  // labels last
+  if (st.see > .02) s += tag([82, -6, 0], 26, 14, 'Seen from Earth');
+  s += tag([mpSX, -mpSR * .7, 0], -10, -14, 'Sun');
+  s += tag([mpER * .7, mpER * .7, 0], 22, 18, 'Earth');
+  s += tag(add(mp, [0, -mpMR, 0]), 14, -16, 'Moon');
+  s += tag([-44, 34, 0], -14, 16, 'Sunlight');
+  s += tag([mpOR * .71, mpOR * .71, 0], 16, 14, "Moon's path");
+  return s;
+}
+
+// ---- sandbox (Try it yourself): follows the sourced what-ifs exactly ----
+function mpTick(st, dt, ui){
+  if (st.go) st.dayHand = (st.dayHand + dt * 2) % mpDAYS;
+  st.p = st.dayHand / mpDAYS * 360;
+}
+function mpObserve(st){
+  const pct = Math.round(mpLitShare(st.p) * 100);
+  return `Day ${Math.round(st.dayHand)}: ${mpName(st.p).toLowerCase()}. About ${pct}% of the side facing us is lit.`;
+}
+
+mountLesson({
+  title: 'Why does the Moon have phases?',
+  level: 'kid',
+  guess: true,
+  view: 'plan',
+  autoZoom: true,
+  palette: MAT.steel,
+  state: { t: 0, sun: 0, see: 0, p: 0, go: false, dayHand: 0 },
+  stats: st => [
+    {label: 'Day', value: st.p >= 359 ? '29.5' : String(Math.round(st.p / 360 * mpDAYS)), small: 'of 29.5'},
+    {label: 'Lit part we see', value: Math.round(mpLitShare(st.p) * 100) + '%'},
+  ],
+  scene,
+  intro: 'You are looking down on Earth from far above. The Sun is on the left. The Moon goes around Earth on the dashed path. Soon a bubble will show what the Moon looks like from Earth.',
+  parts: {
+    'Sun': 'Its light comes from one direction and always lights half of the Moon.',
+    'Earth': 'Our planet. Wherever you are on Earth, you see the same phase on the same night.',
+    'Moon': 'It makes no light of its own. Moonlight is sunlight bouncing off it. The half facing the Sun is always lit.',
+    'Sunlight': 'Light from the Sun. It comes from one direction, so it can only light one half of the Moon.',
+    "Moon's path": 'The way the Moon travels around Earth. It takes about 29.5 days to go from one new moon to the next.',
+    'Seen from Earth': 'What the Moon looks like from the north half of Earth. From the south half, it looks flipped.',
+  },  steps: [
+    { title: 'Sun lights the Moon', lit: ['Sun', 'Moon', 'Sunlight'],
+      do: { label: 'Press the Sun', part: 'sun', at: [mpSX, 0, 0], hint: 'Press the Sun to start.' },
+      say: 'The Moon makes no light of its own. Sunlight comes from one direction, so it always lights half of the Moon. The other half is dark.',
+      run(st, ui){ ui.tween({sun: 1}, 1.2); } },
+    { title: 'New moon', lit: ['Moon', 'Seen from Earth'],
+      guess: { q: 'The Moon is between Earth and the Sun. What do we see from Earth?', choices: ['A bright, round Moon', 'A dark Moon we can hardly see', 'Half a Moon'], answer: 1,
+        why: 'The lit half faces the Sun, away from us. The side facing Earth is dark. This is called new moon.' },
+      say: 'At new moon, the Moon is between Earth and the Sun. Its lit half faces away from us, so the side we see is dark.',
+      drag: { label: 'Drag to look from Earth', secs: 1.5 },
+      run(st, ui){ ui.tween({see: 1}, 1.5); } },
+    { title: 'Growing to half', lit: ['Moon', 'Seen from Earth'],
+      drag: { label: 'Drag to move the Moon', secs: 3 },
+      say: 'As the Moon moves along its path, more of its lit half turns toward us. We see a thin crescent, then half a Moon, called first quarter. In the north half of Earth, the light grows from the right.',
+      run(st, ui){ ui.tween({p: 90}, 3); } },
+    { title: 'Full moon', lit: ['Moon', 'Seen from Earth'],
+      guess: { q: 'Now Earth is between the Sun and the Moon. What do we usually see?', choices: ['A bright, round Moon', "A dark Moon in Earth's shadow", 'A thin crescent'], answer: 0,
+        why: "The whole lit half faces us. The Moon's path is tilted, so the Moon can be behind Earth and still get sunlight. When Earth's shadow does cover it, that is a lunar eclipse, not a phase." },
+      say: 'At full moon, the Moon is on the far side of Earth from the Sun. Its whole lit half faces us, so we see a bright, round Moon.',
+      drag: { label: 'Drag the Moon behind Earth', secs: 2.5 },
+      run(st, ui){ ui.tween({p: 180}, 2.5); } },
+    { title: 'Back to new', lit: ['Moon', "Moon's path"],
+      drag: { label: 'Drag to finish the trip', secs: 3 },
+      say: 'Now the lit part we see shrinks. We see a gibbous Moon, then last quarter, then a crescent. After about 29.5 days it is new moon again, and the phases start over.',
+      run(st, ui){ ui.tween({p: 360}, 3); } },
+  ],  tryit: {
+    title: 'Move the Moon yourself',
+    say: 'Drag the day, or let the Moon move on its own. Watch the bubble: how much of the lit half faces Earth?',
+    setup(st){ st.sun = 1; st.see = 1; st.dayHand = 4; st.p = 4 / mpDAYS * 360; st.go = false; },
+    tick: mpTick,
+    observe: mpObserve,
+    controls: [
+      { type: 'range', key: 'dayHand', label: 'Day of the trip', min: 0, max: 29.5, step: .5, format: v => 'day ' + v },
+      { type: 'toggle', key: 'go', label: 'Let the Moon move' },
+    ],
+  },
+  idea: 'The Sun always lights half of the Moon. As the Moon goes around Earth, we see more or less of that lit half. That is why the Moon has phases.',
+  simplified: [
+    'Sizes and distances are not to scale. The real Sun is far bigger and farther away, and the Moon is much farther from Earth.',
+    "The Moon's path is tilted, so at full moon the Moon can be behind Earth and still get sunlight. A view from straight above can't show this tilt.",
+    'The Sun always shines. Pressing it only starts the lesson. Earth is drawn half lit too, but this lesson is about the Moon.',
+    'The bubble shows the Moon as seen from the north half of Earth. From the south half, it looks flipped.',
+    'The Moon goes around Earth in about 27.3 days, but the phases take about 29.5 days to repeat. The lesson uses 29.5 days.',
+    'The days and percents come from a simple model where the Moon moves at a steady speed.',
+  ],
+  check: [
+    { q: 'Why does the Moon seem to change shape?', choices: ['We see more or less of its lit half', "Earth's shadow covers part of it", 'The Moon really changes shape'], answer: 0,
+      why: 'The Sun always lights half the Moon. As the Moon moves around Earth, we see more or less of that lit half. Its shape never changes.' },
+    { q: 'From the north half of Earth, you see half a Moon lit on the right. What comes next?', choices: ['A bigger, rounder Moon', 'A new moon', 'A thin crescent'], answer: 0,
+      why: 'Half lit on the right is first quarter. Next comes waxing gibbous, then full moon.' },
+    { q: 'A friend far away looks at the Moon on the same night. Which phase do they see?', choices: ['The same phase as you', 'The opposite phase', 'A phase one week behind'], answer: 0,
+      why: 'The phases happen at the same time all over Earth. From the south half of Earth the Moon looks flipped, but the phase is the same.' },
+  ],
+  sources: [
+    { title: 'Moon Phases (NASA Science)', url: 'https://science.nasa.gov/moon/moon-phases/', note: 'Half always lit, 29.5-day cycle, the eight phases, moonlight is reflected sunlight.' },
+    { title: "What Are the Moon's Phases? (NASA Space Place)", url: 'https://spaceplace.nasa.gov/moon-phases/en/', note: 'Light from one direction, dark side faces us at new moon, 27.3 and 29.5 days.' },
+    { title: 'Phase, astronomy (Britannica)', url: 'https://www.britannica.com/science/phase-astronomy', note: 'Where the Moon is at new, quarter and full moon; crescent and gibbous.' },
+    { title: 'Sky Tellers: Moon Phases (Lunar and Planetary Institute)', url: 'https://www.lpi.usra.edu/education/skytellers/moon-phases/', note: 'Waxing from the right in the north, flipped in the south, same phase everywhere.' },
+    { title: 'The Phases of the Moon (Queen Victoria Museum planetarium)', url: 'https://www.qvmag.tas.gov.au/files/assets/qvmag/planetarium/the-phases-of-the-moon-2.pdf', note: "The misconception that Earth's shadow causes phases." },
+    { title: 'What Is an Eclipse? (NASA Space Place)', url: 'https://spaceplace.nasa.gov/eclipses/en/', note: "Lunar eclipses, and why the tilted path means no eclipse every month." },
+  ],
+});
+</script>
+</body>
+</html>

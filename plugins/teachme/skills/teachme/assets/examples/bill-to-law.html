@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How does a bill become a law in the United States?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: How does a bill become a law in the United States? Level: student. Facts: facts.md.
+   Real process: a member introduces a bill (House: drops it in the hopper); a committee studies and may change it
+   (most bills stop here); the House passes it by majority; the Senate passes the exact same text by majority;
+   the President signs it (law) or vetoes it; Congress can override a veto with two-thirds of both chambers.
+   Sandbox facts: majority of 435 = 218, of 100 = 51; two-thirds of 435 = 290, of 100 = 67 (all members voting). */
+
+// ---- geometry ----
+const blX = 10, blX2 = 56;                  // back row (House side) and front row (Senate side)
+const blHop = [blX, 84, 0], blCom = [blX, 48, 0], blHouse = [blX, 12, 0];
+const blSen = [blX2, 12, 0], blPres = [blX2, 52, 0];
+const blPath = [
+  [blX + 2, 96, 15], [blX, 84, 12], [blX, 48, 12], [blX + 4, 26, 14], [blX2 + 4, 26, 14], [blX2 + 1, 60, 9],
+];
+const blSuit = matOf('#3d5a80'), blPresM = matOf('#5a6270'), blYes = matOf('#4caf50');
+
+function blTable(c, w, d, h){
+  return box(c[0] - d / 2, c[1] - w / 2, h - 1.5, c[0] + d / 2, c[1] + w / 2, h, MAT.wood, toneI) +
+    box(c[0] - d / 2 + 1, c[1] - w / 2 + 1, 0, c[0] - d / 2 + 2.5, c[1] - w / 2 + 2.5, h - 1.5, MAT.wood, toneI) +
+    box(c[0] + d / 2 - 2.5, c[1] - w / 2 + 1, 0, c[0] + d / 2 - 1, c[1] - w / 2 + 2.5, h - 1.5, MAT.wood, toneI) +
+    box(c[0] - d / 2 + 1, c[1] + w / 2 - 2.5, 0, c[0] - d / 2 + 2.5, c[1] + w / 2 - 1, h - 1.5, MAT.wood, toneI) +
+    box(c[0] + d / 2 - 2.5, c[1] + w / 2 - 2.5, 0, c[0] + d / 2 - 1, c[1] + w / 2 - 1, h - 1.5, MAT.wood, toneI);
+}
+
+function blBillLines(st){
+  const amount = st.marked > 0.5 ? '~~50~~ [[40]]' : '50';
+  const lines = ['Build ' + amount + ' new', 'school libraries.'];
+  if (st.vetoed > 0.5 && st.law < 0.5) lines.push('[[Vetoed|#ffc9c9]]');
+  else if (st.law > 0.5) lines.push(st.vetoed > 0.5 ? '[[Veto overridden|#c8f0c8]]' : '[[Signed|#c8f0c8]]');
+  return lines;
+}
+
+// ---- the picture: draw back to front, labels last ----
+function scene(st, m){
+  let s = board(-6, -10, 78, 104, 2, 3, BOARD);
+  const z0 = 2;
+  // path the bill follows
+  s += arrow3(blPath.map(p => [p[0], p[1], z0 + 0.2]), 1, '#9aa5b1', {dash: '3 3', phase: st.t * 4});
+  // hopper (wooden box) with the member
+  s += box(blHop[0] - 4, blHop[1] - 4, z0, blHop[0] + 4, blHop[1] + 4, z0 + 8, MAT.wood);
+  s += act('hopper', box(blHop[0] - 4, blHop[1] - 4, z0 + 8, blHop[0] + 4, blHop[1] + 4, z0 + 11, MAT.wood, toneI, 1.4));
+  s += person([blHop[0] + 2, blHop[1] + 13, z0], {m: blSuit, arms: st.s < 0.9 ? 'out' : 'down'});
+  // committee table with three members behind it
+  for (let i = -1; i <= 1; i++) s += person([blCom[0] - 6, blCom[1] + i * 8, z0], {m: blSuit, h: 13});
+  s += blTable([blCom[0] + 1, blCom[1], 0], 26, 9, z0 + 7);
+  if (st.marked > 0.5 && st.s < 2.6) s += bubble([blCom[0] - 6, blCom[1] - 8, z0 + 14], 'Change 50 to 40', {dx: 18, dy: -16, cols: 12});
+  // House: meter of yes votes with members raising hands
+  s += meter([blHouse[0], blHouse[1], z0], 34, 6, st.hv, {m: blYes, marks: [{at: 218 / 435, label: 'Majority 218'}, {at: 290 / 435, label: 'Two-thirds 290'}]});
+  for (let i = 0; i < 3; i++) s += person([blHouse[0] + 11 + i * 6, blHouse[1] - 9, z0], {m: blSuit, h: 11, arms: st.hv > 0.05 * (i + 1) ? 'up' : 'down'});
+  // Senate: meter of yes votes with members
+  s += meter([blSen[0], blSen[1], z0], 34, 6, st.sv, {m: blYes, marks: [{at: 0.51, label: 'Majority 51'}, {at: 0.67, label: 'Two-thirds 67'}]});
+  for (let i = 0; i < 3; i++) s += person([blSen[0] + 11 + i * 6, blSen[1] - 9, z0],{m: matOf('#6b4c7a'), h: 11, arms: st.sv > 0.05 * (i + 1) ? 'up' : 'down'});
+  // President at the desk with a pen
+  s += person([blPres[0] - 7, blPres[1], z0], {m: blPresM});
+  s += blTable([blPres[0] + 1, blPres[1], 0], 18, 9, z0 + 7);
+  s += act('pen', rod([blPres[0] + 2, blPres[1] - 6, z0 + 7.3], [blPres[0] + 4, blPres[1] - 10, z0 + 7.6], 0.6, MAT.gold));
+  if (st.signed > 0.5) s += bubble([blPres[0] - 7, blPres[1], z0 + 15], st.vetoed > 0.5 ? 'Veto' : 'I sign it', {dx: -14, dy: -14, cols: 9});
+  // the bill
+  const bp = hop(blPath, st.s, 8);
+  s += card(bp, blBillLines(st), {title: st.law > 0.5 ? 'Public law' : 'H.R. 1234', cols: 14, size: 6, dy: -22, dx: -26 * clamp(st.s - 4, 0, 1)});
+  // labels last
+  s += tag([blHop[0], blHop[1] - 4, z0 + 10], -14, 18, 'Hopper');
+  s += tag([blCom[0] + 1, blCom[1] - 12, z0 + 7], 10, 18, 'Committee');
+  s += tag([blHouse[0], blHouse[1], z0 + 34], 18, -14, 'House');
+  s += tag([blSen[0], blSen[1], z0 + 34], 22, 0, 'Senate');
+  s += tag([blPres[0] - 7, blPres[1], z0 + 14], -26, 6, 'President');
+  return s;
+}
+
+// ---- sandbox (Try it yourself) ----
+function blOutcome(st){
+  const h = st.hHand, sn = st.sHand;
+  const hPass = h >= 218, sPass = sn >= 51;
+  if (!hPass) return {stage: 3, law: 0, msg: h + ' House yes votes is short of 218, so the bill dies in the House.'};
+  if (!sPass) return {stage: 4, law: 0, msg: sn + ' Senate yes votes is short of 51, so the bill dies in the Senate.'};
+  if (!st.veto) return {stage: 5, law: 1, msg: 'Both chambers passed it and the President signs it, so it becomes law.'};
+  if (h >= 290 && sn >= 67) return {stage: 5, law: 1, msg: 'The President vetoed it, but two-thirds of both chambers voted again to override, so it becomes law.'};
+  return {stage: 5, law: 0, msg: 'The President vetoed it. An override needs 290 House and 67 Senate votes, so the bill does not become law.'};
+}
+function blTick(st, dt, ui){
+  const k = Math.min(1, dt * 3), o = blOutcome(st);
+  st.hv += (st.hHand / 435 - st.hv) * k;
+  st.sv += (st.sHand / 100 - st.sv) * k;
+  st.s += (o.stage - st.s) * k;
+  st.signed = o.stage === 5 ? 1 : 0;
+  st.vetoed = st.veto && o.stage === 5 ? 1 : 0;
+  st.law = o.law;
+}
+function blObserve(st){ return blOutcome(st).msg; }
+
+mountLesson({
+  title: 'How does a bill become a law in the United States?',
+  level: 'student',
+  guess: true,
+  autoZoom: true,
+  palette: MAT.wood,
+  state: { t: 0, s: 0, marked: 0, hv: 0, sv: 0, signed: 0, vetoed: 0, law: 0, hHand: 260, sHand: 60, veto: false },
+  stats: st => [
+    {label: 'House yes votes', value: Math.round(st.hv * 435), small: 'of 435'},
+    {label: 'Senate yes votes', value: Math.round(st.sv * 100), small: 'of 100'},
+  ],
+  scene,
+  intro: 'Follow one made-up bill from idea to law. The figures stand for members of Congress and the President, the paper card is the bill, and each glass tube fills with yes votes.',
+  parts: {
+    'Hopper': 'A wooden box at the side of the clerk\'s desk in the House. A member drops a new bill in it to introduce it.',
+    'Committee': 'A group of members who handle one area of policy. They research, discuss and change bills.',
+    'House': 'The House of Representatives has 435 members. A simple majority is 218 votes.',
+    'Senate': 'The Senate has 100 senators. A simple majority is 51 votes, but ending a long debate (a filibuster) takes 60.',
+    'President': 'Signs the bill to make it a law, or vetoes it and sends it back with objections.',
+  },
+  steps: [
+    { title: 'Introduce the bill', lit: ['Hopper'], do: { label: 'Drop the bill in the hopper', part: 'hopper', at: [blHop[0], blHop[1], 13], hint: 'Press the wooden box' },
+      say: 'A member of Congress introduces the bill. In the House, the member drops it in a wooden box called the hopper. The clerk gives it a number, like H.R. 1234.', run(st, ui){ ui.tween({s: 1}, 1.2); } },
+    { title: 'Committee review', lit: ['Committee'],
+      guess: { q: 'In 2023 and 2024, members brought more than 19,000 bills and resolutions. What happened to most of them?',
+        choices: ['Most became law after small changes', 'Most got no further action after they were introduced', 'Most were vetoed by the President'], answer: 1,
+        why: 'About 91% got no further action after being introduced or released by a committee. Only about 3% became law, counting those folded into other bills.' },
+      say: 'The Speaker sends the bill to a committee, a group of members who work on one area. They study it, discuss it and change it. Here they cut 50 libraries to 40. Only a bill the committee releases goes on to a vote.', run(st, ui){ ui.tween({s: 2}, 1.2, () => ui.tween({marked: 1}, 0.6)); } },
+    { title: 'The House votes', lit: ['House'], drag: { label: 'Drag to count the House votes', secs: 3 },
+      say: 'The whole House debates the bill and votes. A simple majority passes it: 218 of the 435 members. Here 260 members vote yes, so the bill goes to the Senate.', run(st, ui){ ui.tween({s: 3, hv: 260 / 435}, 3); } },
+    { title: 'The Senate votes', lit: ['Senate'],
+      guess: { q: 'Say the Senate changes one word in the bill the House passed. What has to happen next?',
+        choices: ['The President signs the House version', 'Both chambers must pass the same version', 'The Senate version wins on its own'], answer: 1,
+        why: 'Both chambers must vote on the same version before it goes to the President. A conference committee of House and Senate members can work out the differences.' },
+      drag: { label: 'Drag to count the Senate votes', secs: 3 },
+      say: 'The Senate sends the bill to its own committee, debates it and votes. A simple majority, 51 of 100 senators, passes it. Here 60 vote yes. Both chambers have now passed the same text.', run(st, ui){ ui.tween({s: 4, sv: 0.6}, 3); } },
+    { title: 'The President signs', lit: ['President'], do: { label: 'Press the pen to sign', part: 'pen', at: [blPres[0] + 3, blPres[1] - 8, 10], hint: 'Press the gold pen' },
+      say: 'The President has 10 days, not counting Sundays, to act. Signing makes the bill a law. A veto sends it back, and Congress can still pass it with two-thirds of each chamber.', run(st, ui){ ui.tween({s: 5}, 1.2, () => ui.tween({signed: 1, law: 1}, 0.4)); } },
+  ],
+  tryit: {
+    title: 'Pass your own bill',
+    say: 'Set the yes votes in each chamber and choose whether the President vetoes. Watch where the bill stops.',
+    setup(st){ Object.assign(st, {marked: 1, hHand: 260, sHand: 60, veto: false, hv: 260 / 435, sv: 0.6, s: 5, signed: 1, law: 1}); },
+    tick: blTick,
+    observe: blObserve,
+    controls: [
+      { type: 'range', key: 'hHand', label: 'House yes votes', min: 0, max: 435, step: 1, format: v => v + ' of 435' },
+      { type: 'range', key: 'sHand', label: 'Senate yes votes', min: 0, max: 100, step: 1, format: v => v + ' of 100' },
+      { type: 'toggle', key: 'veto', label: 'President vetoes the bill' },
+    ],
+  },
+  idea: 'A bill becomes a law when the House and the Senate pass the same text by majority vote and the President signs it, or when two-thirds of both chambers override a veto.',
+  simplified: [
+    'The bill, its text and the vote counts are made up.',
+    'The lesson assumes all 435 representatives and all 100 senators vote, and leaves out Senate ties.',
+    'A bill can start in either chamber. Here it starts in the House. Bills for raising revenue (taxes) must start in the House.',
+    'The picture leaves out the Senate committee, conference committees and the Senate rule that ending a filibuster takes 60 votes.',
+    'If the President does nothing for 10 days (Sundays excepted), the bill becomes law, unless Congress has adjourned. Then it dies, which is called a pocket veto.',
+  ],
+  check: [
+    { q: 'The House passes a bill 240 to 195. What must happen before the President can sign it?',
+      choices: ['The Senate must pass the same text', 'Nothing, the President can sign it now', 'The committee must vote on it again'], answer: 0,
+      why: 'Every bill must pass both the House and the Senate, in the same version, before it goes to the President.' },
+    { q: 'The President vetoes a bill. Then 300 House members and 62 senators vote to pass it again. Does it become law?',
+      choices: ['Yes, both are majorities', 'No, the Senate needed 67 votes', 'Yes, because the House alone reached two-thirds'], answer: 1,
+      why: 'An override needs two-thirds of each chamber: 290 of 435 in the House and 67 of 100 in the Senate. The Senate fell short.' },
+    { q: 'What if the President does nothing for 10 days (Sundays excepted) while Congress is still meeting?',
+      choices: ['The bill is vetoed', 'The bill goes back to the House', 'The bill becomes law without a signature'], answer: 2,
+      why: 'The Constitution says an unsigned bill becomes law after 10 days, Sundays excepted, unless Congress has adjourned.' },
+  ],
+  sources: [
+    { title: 'House.gov: The Legislative Process', url: 'https://www.house.gov/the-house-explained/the-legislative-process', note: 'Committee, 218 of 435, 51 of 100, conference committee, 10 days.' },
+    { title: 'House.gov: Introduction and Referral', url: 'https://www.house.gov/the-house-explained/the-legislative-process/introduction-referral', note: 'The hopper, the clerk numbers the bill, referral to committee.' },
+    { title: 'USA.gov: How laws are made', url: 'https://www.usa.gov/how-laws-are-made', note: 'Committees change bills; both chambers vote on the same version; overrides.' },
+    { title: 'U.S. Constitution, Article I, Section 7 (National Archives)', url: 'https://www.archives.gov/founding-docs/constitution-transcript', note: 'Signing, veto, two-thirds override, 10 days Sundays excepted, revenue bills.' },
+    { title: 'Senate.gov: Filibuster and Cloture', url: 'https://www.senate.gov/about/powers-procedures/filibusters-cloture.htm', note: 'Filibuster; 60 votes to end debate.' },
+    { title: 'GovTrack: Statistics and Historical Comparison', url: 'https://www.govtrack.us/congress/bills/statistics', note: 'Share of bills with no further action and share enacted, 2023-2024.' },
+  ],
+});
+</script>
+</body>
+</html>

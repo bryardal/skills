@@ -1,0 +1,11 @@
+# Code style for the scripts in scripts/ (formatting: black; linting: ruff).
+[tool.black]
+line-length = 110
+
+[tool.ruff]
+line-length = 110
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["F", "E9", "B", "UP", "SIM"]
+ignore = ["SIM115", "UP007"]

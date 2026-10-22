@@ -1,0 +1,31 @@
+{
+  "brandName": "Superintelligence Accelerator",
+  "byline": "by Bry Ardal",
+  "author": "Bry Ardal",
+  "authorUrl": "https://bryantardal.substack.com",
+  "siteUrl": "https://skills.siaccelerator.co",
+  "githubOwner": "bryardal",
+  "githubRepo": "skills",
+  "marketplaceName": "siaccelerator",
+  "x": {
+    "handle": "@bryantardal",
+    "url": "https://x.com/bryantardal"
+  },
+  "substackUrl": "https://bryantardal.substack.com",
+  "logo": "/assets/brand/logo.png",
+  "logoDark": "/assets/brand/logo-white.png",
+  "icon": "",
+  "colors": {
+    "ink": "#151A1A",
+    "paper": "#FFFFFF",
+    "mist": "#EDEDED",
+    "gold": "#F2C14E"
+  },
+  "email": {
+    "fromName": "Bry Ardal",
+    "fromAddress": "TODO_FROM_ADDRESS",
+    "replyTo": "TODO_REPLY_TO"
+  },
+  "turnstileSiteKey": "TODO_TURNSTILE_SITE_KEY",
+  "privacyUrl": "/privacy"
+}

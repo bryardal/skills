@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why does compound interest grow so fast?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: compound interest, as a diorama of coin towers. Level: student.
+   Metaphor: one tower per year; height = money in the account. Silver coins = the $1,000 you put in,
+   gold coins = interest. A second, paler row shows simple interest (always 7% of the first $1,000).
+   Facts (all computed below, checked against the sources listed at the end):
+   $1,000 at 7% a year, compounded yearly: yr1 $1,070.00, yr2 $1,144.90, yr10 $1,967.15, yr20 $3,869.68, yr30 $7,612.26.
+   Simple interest: $1,000 + $70 per year -> yr10 $1,700, yr20 $2,400, yr30 $3,100. Rule of 72: 72/7 = 10.3 yrs (exact 10.2). */
+const RATE = .07, START = 1000;   // the lesson's numbers; Try it yourself lets the learner change rate and start
+const ciYears = [0, 1, 2, 10, 20, 30];
+const ciY = i => 122 - i * 22;              // years climb away to the viewer's right (the -y direction)
+const CX = 14, SX = 31;                     // compound row (back) and simple row (front, shorter)
+const K0 = 7.2 / 1000;                      // height units per dollar (shrinks in Try it yourself so tall towers still fit)
+let K = K0;
+const compound = (n, st) => (st ? st.start : START) * Math.pow(1 + (st ? st.rate / 100 : RATE), n);
+const simple = (n, st) => (st ? st.start : START) * (1 + (st ? st.rate / 100 : RATE) * n);
+const money = v => '$' + Math.round(v).toLocaleString('en-US');
+const SIMPLE_P = { l: '#e9e4d6', m: '#d2ccbb', d: '#a39c88' }, SIMPLE_I = { l: '#d9d4c4', m: '#bfb9a6', d: '#8f8975' };
+
+function tower(x, y, v, interestM, principalM, start = START){
+  const hp = Math.min(v, start) * K, hi = Math.max(0, v - start) * K;
+  return { at: [x, y, 0], top: hp + hi + 3, svg: stack(x, y, 3, 6, [{ h: hp, m: principalM }, { h: hi, m: interestM }], 1.8) };
+}
+const label = (x, y, z, txt, size, col, op=1, anchor='middle', dx=0) => { const [X, Y] = P(x, y, z);
+  return `<text x="${f(X + dx)}" y="${f(Y)}" font-size="${size}" text-anchor="${anchor}" font-family="ui-monospace,Menlo,monospace" font-weight="800" fill="${col}" opacity="${op}" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round" paint-order="stroke">${txt}</text>`; };
+
+function scene(st){
+  let s = '';
+  const bx0 = 2, by0 = 0, bx1 = 44, by1 = 134;
+  s += board(bx0, by0, bx1, by1, 3, 6, BOARD);
+  const clip = boardTop(bx0, by0, bx1, by1, 3, 6);
+  const parts = [], labels = [];
+  const start = st.start || START;
+  K = Math.min(K0, 56 / Math.max(1, ...ciYears.map((_, i) => st['c' + i] || 0)));
+  ciYears.forEach((yr, i) => {
+    const y = ciY(i), v = st['c' + i], sv = st['s' + i];
+    s += txZ(SX + 9.5, y, 3.05, 'YR ' + yr, 4.4, INK, 800, '-y');
+    if (v > 0){
+      const t = tower(CX, y, v, MAT.gold, MAT.silver, start);
+      s += castShadow([...on(PZ(3), ellUV(CX, y, 6, 6, 16)), ...on(PZ(t.top), ellUV(CX, y, 6, 6, 16))], 3, clip);
+      parts.push(t);
+      const mult = v / start, showMult = st.dbl > 0 && yr >= 10;
+      const lit = showMult && LIT.has('DOUBLING');
+      labels.push(label(CX, y, t.top + 4.5, money(v) + (showMult ? ' \u00B7 ' + mult.toFixed(1) + 'x' : ''), 6, lit ? '#c23b22' : INK));
+    }
+    if (sv > 0){
+      const t = tower(SX, y, sv, SIMPLE_I, SIMPLE_P, start), op = Math.min(1, st.simpleOn).toFixed(2);
+      s += `<g opacity="${op}">` + castShadow([...on(PZ(3), ellUV(SX, y, 6, 6, 16)), ...on(PZ(t.top), ellUV(SX, y, 6, 6, 16))], 3, clip) + '</g>';
+      parts.push({ at: t.at, svg: `<g opacity="${op}">${t.svg}</g>` });
+      labels.push(label(SX, y, t.top - 3, money(sv), 4.8, '#6f675a', op, 'start', 9));
+    }
+  });
+  s += byDepth(parts) + labels.join('');
+  // live: a gold coin keeps dropping onto the newest tower, so you can see interest arriving
+  const last = ciYears.map((_, i) => i).filter(i => (st['c' + i] || 0) > start + 1).pop();
+  if (last != null){ const ph = (st.t % 2.4) / 2.4, y = ciY(last), top = 3 + st['c' + last] * K + 1.2;
+    const fall = Math.min(1, ph / .45), z = top + 14 * (1 - fall * fall), op = ph < .45 ? 1 : Math.max(0, 1 - (ph - .45) / .2);
+    if (op > 0) s += `<g opacity="${op.toFixed(2)}" style="pointer-events:none">` + shape(on(PZ(z - .9), ellUV(CX, y, 3.2, 3.2, 18)), MAT.gold.d, 0.8) + shape(on(PZ(z), ellUV(CX, y, 3.2, 3.2, 18)), MAT.gold.l, 0.8) + '</g>'; }
+  if (LIT.has('$4.90 earned on interest')) s += tag([CX + 4, ciY(2) + 4, (st.c2 || compound(2)) * K + 2.4], -40, -34, '$4.90 earned on interest');
+  if (st.simpleOn > .5) s += tag([SX + 4, ciY(5) + 3, (st.s5 || simple(30)) * K + 1], 40, 16, 'Simple interest');
+  // labels that explain the coins (tap them); they sit on the first two towers, pointing out into empty space
+  if (st.c0 > 0) s += tag([CX + 3, ciY(0) + 5, 3 + Math.min(st.c0, start) * K * .5], -58, 30, 'Silver coins');
+  if (st.c1 > start + 1) s += tag([CX + 3, ciY(1) + 5, 3 + st.c1 * K - .8], -96, -46, 'Gold coins');
+  return s;
+}
+
+
+// Try it yourself: recompute every tower from the learner's rate and starting amount
+function ciSet(st){
+  ciYears.forEach((n, i) => { st['c' + i] = compound(n, st); });
+  [3, 4, 5].forEach(i => { st['s' + i] = simple(ciYears[i], st); });
+  st.simpleOn = 1; st.dbl = 1; st.yr = 30;
+}
+
+mountLesson({
+  title: 'Why does compound interest grow so fast?',
+  level: 'student',
+  bounds: [[2, 0, 0], [44, 134, 66]],
+  palette: MAT.silver,
+  state: { t: 0, c0: 0, c1: 0, c2: 0, c3: 0, c4: 0, c5: 0, s3: 0, s4: 0, s5: 0, simpleOn: 0, dbl: 0, yr: 0, rate: 7, start: 1000 },
+  stats: st => [{ label: 'Balance', value: money(Math.max(st.c0, st.c1, st.c2, st.c3, st.c4, st.c5)) }, { label: 'Year', value: String(Math.round(st.yr)), small: true }],
+  scene,
+  intro: 'Each tower shows how much money is in your account in one year. The taller the tower, the more money. You put in $1,000 once and never add more.',
+  parts: {
+    'Silver coins': 'The money you put in at the start.',
+    'Gold coins': 'Interest the bank has added to your account.',
+    'Simple interest': 'The pale towers. The bank pays 7% of your first $1,000 every year, and nothing on top of that.',
+  },
+  steps: [
+    { title: 'Put in $1,000',
+      do: { label: 'Put in $1,000', hint: 'Start by putting your money in the account.' },
+      say: 'You put $1,000 into an account that earns 7% interest a year. The silver coins are your $1,000.',
+      run(st, ui){ ui.tween({ c0: 1000 }, 1.2); } },
+    { title: 'Year 1',
+      do: { label: 'Wait one year', hint: 'Now leave the money alone for a year.' },
+      say: 'After one year, the bank adds 7% of $1,000. That is $70, shown as gold coins. You now have $1,070.',
+      run(st, ui){ ui.tween({ c1: compound(1), yr: 1 }, 1.4); } },
+    { title: 'Year 2', lit: ['$4.90 earned on interest'], zoom: { at: [CX, ciY(1), 12], k: 2 },
+      guess: { q: 'In year 2, the bank pays 7% again. How much interest do you get?',
+        choices: ['$70, the same as last year', 'A bit more than $70', 'A bit less than $70'], answer: 1,
+        why: 'The bank now pays 7% of $1,070, not $1,000. That is $74.90.' },
+      say: 'This time the bank pays 7% of $1,070, which is $74.90. The extra $4.90 is interest earned on last year’s interest. This is called compounding.',
+      run(st, ui){ ui.tween({ c2: compound(2), yr: 2 }, 1.4); } },
+    { title: 'Ten years', lit: ['DOUBLING'],
+      drag: { label: 'Drag to fast-forward to year 10', secs: 1.8 },
+      say: 'Each year’s interest is a bit bigger, because the balance keeps growing. After 10 years, your $1,000 has almost doubled to $1,967.',
+      run(st, ui){ st.dbl = 1; ui.tween({ c3: compound(10), yr: 10 }, 1.8); } },
+    { title: 'Thirty years', lit: ['Simple interest'],
+      guess: { q: 'You leave it for 30 years at 7%. About how much will you have?',
+        choices: ['About $3,100', 'About $4,500', 'About $7,600'], answer: 2,
+        why: '$1,000 multiplied by 1.07, thirty times over, is about $7,612. $3,100 is what simple interest would give.' },
+      drag: { label: 'Drag to fast-forward to year 30', secs: 2.6 },
+      say: 'After 30 years you have $7,612. The pale towers show simple interest, where the bank only ever pays 7% of your first $1,000. That gives just $3,100. The whole difference is interest earned on interest.',
+      run(st, ui){ ui.tween({ c4: compound(20), c5: compound(30), s3: simple(10), s4: simple(20), s5: simple(30), simpleOn: 1, yr: 30 }, 2.6); } },
+    { title: 'A quick shortcut', lit: ['DOUBLING'],
+      do: { label: 'Show the pattern', hint: 'Look at how many times bigger each tower is than your $1,000.' },
+      say: 'Look at the pattern. Your money is about 2 times bigger at 10 years, 4 times at 20 and 8 times at 30, so it doubles about every 10 years. The rule of 72 estimates this: divide 72 by the rate. 72 ÷ 7 is about 10.',
+      run(st, ui){ ui.tween({ dbl: 1 }, .3); } },
+  ],
+  tryit: {
+    say: 'Change the interest rate and the starting amount. Watch how fast the towers grow, and check the rule of 72.',
+    setup(st){ st.rate = 7; st.start = 1000; ciSet(st); },
+    observe: st => `At ${st.rate}%, money doubles about every ${(72 / st.rate).toFixed(1)} years (72 ÷ ${st.rate}). After 30 years, ${money(st.start)} grows to ${money(compound(30, st))}. Simple interest would give ${money(simple(30, st))}.`,
+    controls: [
+      { type: 'range', key: 'rate', label: 'Interest rate per year', min: 1, max: 12, step: 1, format: v => v + '%', onChange: ciSet },
+      { type: 'range', key: 'start', label: 'Starting amount', min: 500, max: 5000, step: 500, format: v => money(v), onChange: ciSet },
+    ],
+  },
+  idea: 'Compound interest grows faster each year because you earn interest on your interest. At a steady rate, your money keeps doubling on a regular schedule.',
+  simplified: [
+    'Here the bank adds interest once a year. Real accounts often add it monthly or daily, which grows a little faster.',
+    'It leaves out taxes, fees and inflation.',
+    'Typical savings accounts pay less than 7%, and rates change. 7% is used here so the pattern is easy to see.',
+    'The rule of 72 is an estimate. At 7%, the exact doubling time is about 10.2 years.',
+    'In Try it yourself, the towers shrink to fit when the amounts get large, but they stay in proportion to each other.',
+  ],
+  check: [
+    { q: 'Why does the account grow by more each year, even though you never add money?',
+      choices: ['The bank raises the rate every year', 'You also earn interest on the interest you already got', 'Inflation adds money to it'], answer: 1,
+      why: 'Each year’s 7% is worked out on a bigger balance, because your earlier interest stays in the account.' },
+    { q: 'Using the rule of 72, about how long does money take to double at 6% a year?',
+      choices: ['6 years', '12 years', '20 years'], answer: 1,
+      why: '72 ÷ 6 = 12 years.' },
+    { q: 'Which has more after 30 years?',
+      choices: ['$1,000 earning 7% compound interest', '$2,000 earning 7% simple interest'], answer: 0,
+      why: 'Compound gives about $7,612. Simple gives $2,000 + 30 × $140 = $6,200. Even starting with half as much, compound wins.' },
+  ],
+  sources: [
+    { title: 'Cornell Law School LII: Compound interest', url: 'https://www.law.cornell.edu/wex/compound_interest', note: 'Interest earned on earlier interest' },
+    { title: 'Consumer Financial Protection Bureau: How does compound interest work?', url: 'https://www.consumerfinance.gov/ask-cfpb/how-does-compound-interest-work-en-1683/', note: 'Interest on interest; adding interest more often grows faster' },
+    { title: 'Investor.gov (U.S. SEC): Compound interest calculator', url: 'https://www.investor.gov/financial-tools-calculators/calculators/compound-interest-calculator', note: 'Interest can be added yearly, monthly or daily' },
+    { title: 'Corporate Finance Institute: Rule of 72', url: 'https://corporatefinanceinstitute.com/resources/wealth-management/rule-of-72-double-investment/', note: 'Divide 72 by the yearly rate to estimate doubling time' },
+  ],
+});
+</script>
+</body>
+</html>

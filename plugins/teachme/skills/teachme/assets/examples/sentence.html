@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How does a sentence work?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: How does a sentence work? (subject, verb, object and how word order changes meaning) Level: kid. Facts: facts.md.
+   Real process: the subject names who does the action; the verb names the action; the object names who or what
+   the action is done to. English usually puts them in the order subject, verb, object, and the order tells the
+   reader who did what. Swap subject and object and the meaning changes.
+   Sandbox facts: swapping the nouns swaps who does the action; jumbling the order leaves the reader unsure. */
+
+// ---- geometry ----
+const smMia = [-12, 12, 0], smLeo = [12, -12, 0];
+const smSlot = k => [-13 + 13 * k, 13 - 13 * k, 30];
+// cards keep the same screen size at any zoom, so use a smaller card on narrow screens
+const smSz = () => (typeof innerWidth === 'number' && innerWidth < 600) ? 10 : 16;
+const smCol = { s: '#bfe0ff', v: '#ffe08a', o: '#ffc9d4' };
+
+// continuous slot index of each word (0 = first, 1 = middle, 2 = last)
+function smSlots(st){
+  const sw = st.sw, j = st.j;
+  let mia = 2 * sw, leo = 2 - 2 * sw, verb = 1;
+  // jumble: the last word moves to the middle, the verb moves to the end
+  if (sw < .5) { leo = leo - j; } else { mia = mia - j; }
+  verb = 1 + j;
+  return { mia, leo, verb };
+}
+function smTilePt(k, lift){ const p = smSlot(k); return [p[0], p[1], p[2] + lift]; }
+
+function smArc(a, b, h, n){
+  const pts = [];
+  for (let i = 0; i <= n; i++) { const u = i / n; const p = lerp3(a, b, u); p[2] += Math.sin(Math.PI * u) * h; pts.push(p); }
+  return pts;
+}
+
+function smDrops(c, amt, t){
+  if (amt < .05) return '';
+  let s = '';
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * Math.PI * 2, f = frac(t * .7 + i / 6);
+    const p = [c[0] + Math.cos(a) * 3.2, c[1] + Math.sin(a) * 3.2, c[2] + 2 - f * 9];
+    s += fade(amt * (1 - f * .6), token(p, 'water', .7));
+  }
+  return s;
+}
+
+// ---- the picture: draw back to front, labels last ----
+function scene(st, m){
+  let s = '';
+  const t = st.t || 0;
+  const subjIsMia = st.sw < .5;
+  const S = subjIsMia ? smMia : smLeo, O = subjIsMia ? smLeo : smMia;
+  const splash = st.sp * clamp(Math.abs(st.sw * 2 - 1), 0, 1) * (1 - st.j);
+  // shallow pool
+  s += shape(on(PZ(0), ellUV(0, 0, 22, 22, 48)), '#cfe9f7');
+  s += curve(on(PZ(0), ellUV(0, 0, 22, 22, 48)), '#7fb8d8', 1.2, { close: true });
+  s += ripples([S[0], S[1], 0], 'z', t, splash, { n: 3, r0: 3, r1: 8, col: '#5fa3c9' });
+  // role rings under the two children
+  if (st.rS > .02 && st.j < .5) s += ring([S[0], S[1], .2], 'z', 5, '#3b82d6', 2.4, st.rS);
+  if (st.rO > .02 && st.j < .5) s += ring([O[0], O[1], .2], 'z', 5, '#e0567a', 2.4, st.rO);
+  // the two children
+  const miaArms = subjIsMia && splash > .2 ? 'out' : (subjIsMia && st.hS > .5 && st.sp < .05 && st.j < .5 ? 'wave' : 'down');
+  const leoArms = !subjIsMia && splash > .2 ? 'out' : 'down';
+  const people = [
+    { at: smMia, svg: act('mia', person(smMia, { m: matOf('#f08a3c'), skin: matOf('#e9b48a'), hair: '#3a2416', arms: miaArms, sad: st.wetM > .5, h: 15 })) + smDrops([smMia[0], smMia[1], 15], st.wetM, t) },
+    { at: smLeo, svg: act('leo', person(smLeo, { m: matOf('#4fae6a'), skin: matOf('#c98f62'), hair: '#1f1a17', arms: leoArms, sad: st.wetL > .5, h: 15 })) + smDrops([smLeo[0], smLeo[1], 15], st.wetL, t) },
+  ];
+  s += byDepth(people);
+  // the splash: water flying from the subject's hands to the object
+  if (splash > .02) {
+    const path = smArc([S[0], S[1], 9], [O[0], O[1], 13], 9, 16);
+    s += curve(path, '#5fa3c9', 1.2, { dash: 3, op: .7 * splash });
+    s += flow(path, 'water', splash, t, 7, .9, .8);
+    s += legend([['water', 'Water']]);
+  }
+  // confused thought bubbles when the order is jumbled
+  if (st.j > .5) {
+    s += fade(st.j, bubble([smMia[0], smMia[1], 17], 'Who did it?', { dx: -16, dy: -12, think: true }));
+    s += fade(st.j, bubble([smLeo[0], smLeo[1], 17], 'Who did it?', { dx: 16, dy: -12, think: true }));
+  }
+  // the sentence: three word cards in a row
+  const k = smSlots(st);
+  const liftM = Math.sin(Math.PI * st.sw) * 7, liftL = -Math.sin(Math.PI * st.sw) * 7;
+  const jl = Math.sin(Math.PI * st.j) * 6;
+  const role = w => {
+    if (st.j > .5) return null;
+    if (w === 'verb') return st.hV > .5 ? smCol.v : null;
+    const isS = (w === 'mia') === subjIsMia;
+    if (isS) return st.hS > .5 ? smCol.s : null;
+    return st.hO > .5 ? smCol.o : null;
+  };
+  const word = (w, txt) => { const c = role(w); return c ? '[[' + txt + '|' + c + ']]' : txt; };
+  const capM = k.mia < .5 ? 'Mia' : 'Mia', capL = 'Leo';
+  const last = (kk) => kk > 1.5;
+  const tiles = [
+    { at: smTilePt(k.mia, liftM), txt: word('mia', capM + (last(k.mia) ? '.' : '')) },
+    { at: smTilePt(k.leo, liftL - (st.sw < .5 ? jl : 0)), txt: word('leo', capL + (last(k.leo) ? '.' : '')) },
+    { at: smTilePt(k.verb, jl), txt: word('verb', (k.verb < .5 ? 'Splashes' : 'splashes') + (last(k.verb) ? '.' : '')) },
+  ];
+  s += act('sentence', tiles.map(o => card(o.at, [o.txt], { size: smSz() })).join(''));
+  // arrows from each word down to the child it names
+  if (st.j < .5) {
+    const sP = smTilePt(subjIsMia ? k.mia : k.leo, 0), oP = smTilePt(subjIsMia ? k.leo : k.mia, 0);
+    if (st.rS > .02) s += fade(st.rS, arrow3([[sP[0], sP[1], sP[2] - 4], [S[0], S[1], 18.5]], 1.6, '#3b82d6', { dash: 3 }));
+    if (st.rO > .02) s += fade(st.rO, arrow3([[oP[0], oP[1], oP[2] - 4], [O[0], O[1], 18.5]], 1.6, '#e0567a', { dash: 3 }));
+  }
+  // labels: the roles belong to the places in the row, not to the names
+  if (st.j < .5) {
+    s += tag(smSlot(0), -30, -26, 'Subject');
+    s += tag(smSlot(1), 0, -34, 'Verb');
+    s += tag(smSlot(2), 30, -26, 'Object');
+  }
+  else s += tag(smSlot(1), 0, -34, 'Word order');
+  return s;
+}
+
+// ---- sandbox (Try it yourself) ----
+function smTick(st, dt, ui){
+  st.sw += clamp(st.swHand - st.sw, -dt * 1.5, dt * 1.5);
+  const jt = st.jum ? 1 : 0;
+  st.j += clamp(jt - st.j, -dt * 1.5, dt * 1.5);
+  const splash = clamp(Math.abs(st.sw * 2 - 1), 0, 1) * (1 - st.j);
+  const leoIsObj = st.sw < .5;
+  if (splash > .6) {
+    if (leoIsObj) { st.wetL = Math.min(1, st.wetL + dt); st.wetM = Math.max(0, st.wetM - dt * .4); }
+    else { st.wetM = Math.min(1, st.wetM + dt); st.wetL = Math.max(0, st.wetL - dt * .4); }
+  }
+}
+function smObserve(st){
+  if (st.j > .5) return (st.sw < .5 ? 'Mia Leo splashes.' : 'Leo Mia splashes.') + ' The words are not in subject, verb, object order, so in English the order no longer tells us who splashed whom.';
+  const S = st.sw < .5 ? 'Mia' : 'Leo', O = st.sw < .5 ? 'Leo' : 'Mia';
+  return S + ' splashes ' + O + '. ' + S + ' comes before the verb, so ' + S + ' is the subject and splashes. ' + O + ' comes after the verb, so ' + O + ' is the object and gets wet.';
+}
+
+mountLesson({
+  title: 'How does a sentence work?',
+  subtitle: 'Subject, verb, object, and why word order matters',
+  level: 'kid',
+  guess: true,
+  autoZoom: true,
+  palette: MAT.paper,
+  state: { t: 0, sw: 0, j: 0, sp: 0, wetL: 0, wetM: 0, hS: 0, hV: 0, hO: 0, rS: 0, rO: 0, swHand: 0, jum: false },
+  scene,
+  intro: 'The three cards are a sentence. Mia and Leo act out what it says. Watch how the order of the cards decides who gets wet.',
+  parts: {
+    'Subject': 'The subject is who does the action. In English it comes before the verb.',
+    'Verb': 'The verb is a doing or being word, like splashes, kicks or is. Here it says what the subject does.',
+    'Object': 'The object is who or what gets the action. In English it comes after the verb.',
+    'Word order': 'Word order is the order the words come in. In English it shows who did what to whom.',
+    'Water': 'Water flying from one child to the other. It shows who is doing the splashing.',
+  },
+  steps: [
+    { title: 'Who does it?', lit: ['Subject'], do: { label: 'Press the word Mia', part: 'sentence', at: smSlot(0), hint: 'The first card' },
+      say: 'This sentence is built around a verb, the word for the action. The word before the verb names who does the action, and that word is the subject. Here, Mia is the subject.', run(st, ui){ ui.tween({ hS: 1, rS: 1 }, 1); } },
+    { title: 'The action word', lit: ['Verb'], drag: { label: 'Drag to splash', secs: 2 },
+      say: 'Splashes is the verb. Verbs are doing or being words, and this one tells us what the subject does. Here, Mia splashes.', run(st, ui){ ui.tween({ hV: 1, sp: 1 }, 2); } },
+    { title: 'Who gets it?', lit: ['Object'], drag: { label: 'Drag to splash Leo', secs: 1.5 }, guess: { q: 'Who gets wet?', choices: ['Mia', 'Leo', 'Both of them'], answer: 1, why: 'Leo comes after the verb, so Leo is the object. The object gets the action, so Leo gets wet.' },
+      say: 'Leo comes after the verb, so Leo is the object. The object is who gets the action. Mia splashes, and Leo gets wet.', run(st, ui){ ui.tween({ hO: 1, rO: 1, wetL: 1 }, 1.5); } },
+    { title: 'Swap the names', lit: ['Subject', 'Object'], guess: { q: 'Swap Mia and Leo. What happens?', choices: ['Nothing, it is the same words', 'Now Leo splashes Mia', 'It is not a sentence any more'], answer: 1, why: 'Same words, new order. Now Leo comes before the verb, so Leo does the splashing.' },
+      do: { label: 'Press the cards to swap them', part: 'sentence', at: smSlot(1), hint: 'Any card' },
+      say: 'The same three words come in a new order. Now Leo comes before the verb, so Leo is the subject and splashes. Mia comes after the verb, so Mia gets wet.', run(st, ui){ ui.tween({ sw: 1 }, 1.6, () => ui.tween({ wetM: 1, wetL: 0 }, 1.2)); } },
+    { title: 'Mix up the order', lit: ['Word order'], do: { label: 'Press to mix up the words', part: 'sentence', at: smSlot(1), hint: 'Any card' },
+      say: 'English uses the order subject, verb, object, and that order tells us who did what. Mix the words up and the order stops telling us. Who splashed whom?', run(st, ui){ ui.tween({ j: 1 }, 1.6); } },
+  ],
+  tryit: {
+    title: 'Try it yourself',
+    say: 'Swap the names or jumble the words, and watch who gets wet.',
+    setup(st){ st.j = 0; st.jum = false; st.sw = 0; st.swHand = 0; st.sp = 1; st.wetL = 0; st.wetM = 0; st.hS = 1; st.hV = 1; st.hO = 1; st.rS = 1; st.rO = 1; },
+    tick: smTick,
+    observe: smObserve,
+    controls: [
+      { type: 'button', label: 'Swap the names', onClick(st, ui){ st.swHand = st.swHand > .5 ? 0 : 1; } },
+      { type: 'toggle', key: 'jum', label: 'Jumble the words' },
+    ],
+  },
+  idea: 'In English, the subject comes before the verb and does the action, and the object comes after the verb and gets the action. Swap them and you change the meaning.',
+  simplified: [
+    'English usually, but not always, uses the order subject, verb, object.',
+    'Not every word after a verb is an object. In "We will visit on Tuesday", nothing gets visited, so there is no object.',
+    'Some sentences have no object, like "Mia laughs."',
+    'Many languages show who did what with word endings or small added parts, so order matters less there. The most common order in the world puts the verb last.',
+    'Mia, Leo and the water are a made-up scene. The blue and pink colours only mark the subject and the object.',
+  ],
+  check: [
+    { q: 'In "The cat chases the dog", who does the chasing?', choices: ['The cat', 'The dog', 'Nobody can tell'], answer: 0, why: 'The cat comes before the verb chases, so the cat is the subject and does the chasing.' },
+    { q: 'Which word is the verb in "Sam kicks the ball"?', choices: ['Sam', 'kicks', 'ball'], answer: 1, why: 'Kicks is the doing word. Sam is the subject, and the ball is the object.' },
+    { q: 'Could a language put the verb at the end of a sentence?', choices: ['No, no language does that', 'Yes, and it is the most common order in the world', 'Only in made-up languages'], answer: 1, why: 'A big study of the world\'s languages found that subject, object, verb is the most common order. English puts the verb in the middle.' },
+  ],
+  sources: [
+    { title: 'Oak National Academy: Subject and object', url: 'https://thenational.academy/teachers/programmes/english-primary-ks2/units/using-five-sentence-types/lessons/subject-and-object', note: 'What a verb, a subject and an object are' },
+    { title: 'Charles Darwin University, Language Shell: Word order', url: 'https://language-shell.cdu.edu.au/glossary/word-order/', note: 'English order shows who did what; swapping changes the meaning; other languages use prefixes' },
+    { title: 'The Open University, OpenLearn: Getting started on classical Latin 4.3.3', url: 'https://www.open.edu/openlearn/history-the-arts/getting-started-on-classical-latin/content-section-4.3.3', note: 'English relies on word order; Latin uses word endings' },
+    { title: 'WALS Online, Dryer: Order of subject, object and verb', url: 'https://wals.info/chapter/81', note: 'English is subject, verb, object; verb-last is the most common order' },
+    { title: 'Wikipedia: Subject-verb-object word order', url: 'https://en.wikipedia.org/wiki/Subject%E2%80%93verb%E2%80%93object_word_order', note: 'Backup for the meaning of subject, verb, object' },
+  ],
+});
+</script>
+</body>
+</html>

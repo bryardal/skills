@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How does a steam engine work?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: How does a steam engine work? Level: adult. Facts: facts.md.
+   Real process: fire heats water in the closed boiler -> steam under pressure (gauge, safety valve) -> throttle lets
+   steam into the steam chest -> slide valve sends it to one end of the cylinder while the other end exhausts ->
+   piston pushed both ways (double-acting) -> piston rod, crosshead, connecting rod and crank turn it into rotation;
+   flywheel carries the crank past the dead centres -> an eccentric on the crankshaft moves the valve -> exhaust to
+   the air -> the governor opens or closes the throttle as the speed falls or rises.
+   Sandbox facts: more throttle, more steam, more speed (8, 29); load slows the engine (31); a governor holds speed
+   nearly steady but it dips a few per cent under load (32); without it speed follows the load (inferred, 31, 32). */
+
+// ---- geometry ----
+const SE_Y = 52, SE_Z = 24;                       // cylinder axis
+const SE_XC = 96, SE_R = 7.5, SE_LC = 30;         // crankshaft x, crank radius, connecting rod length
+const SE_E = 3.2, SE_LEAD = .25;                  // valve travel and lead (simplified)
+const SE_SEC = 59.06;                             // the cut-open face of the cylinder
+const SE_GREEN = { l: '#7aa383', m: '#557f62', d: '#30503c' };
+const SE_IRON = { l: '#8b9198', m: '#646b72', d: '#3d4248' };
+const SE_PIPE = [[13, 67, 48], [13, 67, 54], [40, 67, 54], [40, 52, 54], [40, 52, 42]];
+TOKENS.live = { shape: 'ball', m: { l: '#ffd5c2', m: '#f29a74', d: '#b4532e' } };
+TOKENS.used = { shape: 'ball', m: { l: '#f2f6fa', m: '#c8d5e2', d: '#7f91a4' } };
+const SE_COL = { live: '#ee8152', exp: '#f5b18c', used: '#a9c7e0', none: '#e4e7eb' };
+
+const seKin = st => { const a = st.ang, px = SE_XC + SE_R * Math.cos(a), pz = SE_Z + SE_R * Math.sin(a);
+  const xch = px - Math.sqrt(SE_LC * SE_LC - Math.pow(SE_R * Math.sin(a), 2)), v = -SE_E * Math.sin(a + SE_LEAD);
+  return { px, pz, xch, xp: xch - 26, v }; };
+// which way each end of the cylinder is connected, from the valve position (see the ports below)
+const seEnds = (v, on) => { const L = !on ? 'none' : v > .6 ? 'live' : v < -.4 ? 'used' : 'exp', R = !on ? 'none' : v < -.6 ? 'live' : v > .4 ? 'used' : 'exp'; return { L, R }; };
+const seSec = (uv, col, w = 0) => { const pts = on(PY(SE_SEC), uv); return fill(pd(pts), col) + (w ? ink(pd(pts), w) : ''); };
+
+// ---- the picture ----
+function scene(st, m){
+  let s = '';
+  const k = seKin(st), steamOn = st.thr > .02 && st.press > .5, ends = seEnds(k.v, steamOn);
+  s += ground(10, 70, 0, 12) + ground(62, 52, 0, 34, 11) + ground(96, 42, 0, 16, 7);
+
+  // exhaust pipe, behind the cylinder, up into the air
+  s += pipe([[40, 45, 30], [40, 40, 30], [40, 40, 62]], 1.5, SE_IRON);
+  // flywheel (behind), crankshaft, bearing
+  s += wheel([SE_XC, 38, SE_Z], 'y', 19, -st.ang, SE_IRON, { spokes: 6, thick: 3.2 });
+  s += rod([SE_XC, 35, SE_Z], [SE_XC, 56, SE_Z], 1.5, MAT.steel, tone, 1);
+  s += box(91, 42, 0, 101, 48, 21, SE_GREEN, tone, 1) + box(92, 42, 21, 100, 48, 27, SE_GREEN, tone, 1);
+
+  // boiler on its firebox, far left
+  s += box(0, 60, 0, 20, 80, 14, MAT.brick, tone, 1);
+  const door = on(PY(80.02), rrUV(6, 2.5, 14, 10, 1.2));
+  let fb = fill(pd(door), st.fire > .05 ? mix('#3a2a20', '#7a2e12', st.fire) : '#2c2622') + glow([10, 80.1, 5.5], 9, st.fire * .8) + fire([10, 80.1, 3], 7, 6.5, st.fire, st.t) + ink(pd(door), 1);
+  s += act('fire', fb);
+  s += cyl(10, 70, 14, 46, 9, SE_IRON, tone, 1.4) + cyl(10, 70, 46, 49, 9, SE_IRON, tone, 1.1, 24, 5.5);
+  // a window into the boiler: water, and bubbles when the fire is lit
+  const arc = (z, r = 9.05) => Array.from({ length: 13 }, (_, i) => { const a = (12 + i * 5.5) * Math.PI / 180; return [10 + r * Math.cos(a), 70 + r * Math.sin(a), z]; });
+  const wz = 31;
+  s += fill(pd([...arc(18), ...arc(wz).reverse()]), WATER.m) + fill(pd([...arc(wz), ...arc(41).reverse()]), mix('#e9edf1', '#ffffff', st.press));
+  for (let i = 0; i < 9 && st.fire > .2; i++){ const ph = frac(st.t * (.6 + i * .07) + i / 9), a = (16 + (i * 37) % 60) * Math.PI / 180, z = 19 + ph * (wz - 19.5);
+    const [X, Y] = P(10 + 9.1 * Math.cos(a), 70 + 9.1 * Math.sin(a), z); s += `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(.5 + ph * .5)}" fill="#fff" opacity="${(.85 * st.fire).toFixed(2)}"/>`; }
+  s += ink(pd([...arc(18), ...arc(41).reverse()]), 1);
+  s += rod([10, 77.5, 38], [10, 79.3, 38], .45, MAT.brass, tone, .6) + gauge([10, 79.4, 38], 'y', 3.3, st.press * .74);
+  s += cyl(6, 66, 49, 52.5, 1.1, MAT.brass, tone, .8) + cyl(4, 74, 49, 64, 2.1, SE_IRON, tone, 1.1);
+
+  // the engine bed, the frame under the guides, the cylinder and steam chest
+  s += box(26, 44, 0, 84, 60, 5, SE_GREEN, tone, 1.2) + box(54, 47, 5, 80, 57, 18, SE_GREEN, tone, 1);
+  // eccentric on the crankshaft and its rod to the valve rod (behind the connecting rod)
+  const ea = st.ang + Math.PI / 2 + SE_LEAD, ec = [SE_XC + SE_E * Math.cos(ea), 49.5, SE_Z + SE_E * Math.sin(ea)];
+  s += shape(on(PY(49.5), ellUV(ec[0], ec[2], 5, 5, 24)), MAT.brass.m, .9) + shape(on(PY(49.5), ellUV(SE_XC, SE_Z, 1.7, 1.7, 12)), MAT.steel.m, .6);
+  s += rod(ec, [70 + k.v, 49.5, 38], .6, MAT.steel, tone, .8) + rod([48, 49.5, 38], [70 + k.v, 49.5, 38], .55, MAT.steel, tone, .8);
+  s += box(31, 46, 5, 49, 58, 14, SE_GREEN, tone, 1) + box(28, 45, 14, 52, 59, 34, SE_GREEN, tone, 1.4) + box(32, 46, 34, 48, 58, 42, SE_GREEN, tone, 1.2);
+
+  // the cut-open side: steam chest, slide valve, ports, cylinder and piston (drawn flat on the side face)
+  let sec = seSec([[28.6, 14.6], [51.4, 14.6], [51.4, 33.9], [47.4, 33.9], [47.4, 41.4], [32.6, 41.4], [32.6, 33.9], [28.6, 33.9]], '#9ea7b1', 1);
+  sec += seSec(rectUV(33, 35, 47, 41), steamOn ? SE_COL.live : SE_COL.none);
+  sec += seSec([[35, 34.05], [37.4, 34.05], [32.4, 31.95], [30, 31.95]], SE_COL[ends.L], .6) + seSec([[42.6, 34.05], [45, 34.05], [50, 31.95], [47.6, 31.95]], SE_COL[ends.R], .6);
+  sec += seSec(rectUV(39, 32.9, 41, 34.05), '#8495a8');
+  sec += seSec(rectUV(30, 16, k.xp - 2, 32), SE_COL[ends.L]) + seSec(rectUV(k.xp + 2, 16, 50, 32), SE_COL[ends.R]);
+  const vx = 40 + k.v;
+  sec += seSec([[vx - 5.6, 34.05], [vx + 5.6, 34.05], [vx + 5.6, 37.6], [vx - 5.6, 37.6]], '#5f6a76', .9) + seSec(rectUV(vx - 2.2, 34.05, vx + 2.2, 35.9), SE_COL.used, .6);
+  sec += seSec(rectUV(k.xp + 2, 23.3, 51.4, 24.7), '#d5dade', .6) + seSec(rectUV(k.xp - 2, 16, k.xp + 2, 32), '#4f5963', 1)
+       + ink(pd(on(PY(SE_SEC), [[k.xp - 2, 21], [k.xp + 2, 21]]), false), .4) + ink(pd(on(PY(SE_SEC), [[k.xp - 2, 27], [k.xp + 2, 27]]), false), .4);
+  sec += ink(pd(on(PY(SE_SEC), rectUV(30, 16, 50, 32))), 1) + ink(pd(on(PY(SE_SEC), rectUV(33, 35, 47, 41))), 1);
+  // steam moving through the ports
+  const sp3 = uv => on(PY(SE_SEC + .05), uv);
+  if (ends.L === 'live') sec += flow(sp3([[37, 38.5], [36.2, 34.5], [33, 32.5], [31.5, 26]]), 'live', 1, st.t, 4, .9, .75);
+  if (ends.R === 'live') sec += flow(sp3([[43, 38.5], [43.8, 34.5], [47, 32.5], [48.5, 26]]), 'live', 1, st.t, 4, .9, .75);
+  if (ends.L === 'used') sec += flow(sp3([[31.5, 26], [31.2, 32.5], [36.2, 34.6], [39.2, 35.2], [40, 33.2]]), 'used', 1, st.t, 4, .9, .75);
+  if (ends.R === 'used') sec += flow(sp3([[48.5, 26], [48.8, 32.5], [43.8, 34.6], [40.8, 35.2], [40, 33.2]]), 'used', 1, st.t, 4, .9, .75);
+  s += sec;
+
+  // steam pipe, throttle valve with its handwheel, governor
+  s += pipe(SE_PIPE, 1.5, MAT.steel);
+  if (steamOn || st.thr > .02) s += flow(SE_PIPE.map(p => [p[0], p[1] + .3, p[2] + 1.7]), 'live', Math.min(1, st.thr * 1.5) * st.press, st.t, 9, .32, .9);
+  let thr = `<circle cx="${f(P(40, 52, 48)[0])}" cy="${f(P(40, 52, 48)[1])}" r="2.6" fill="${MAT.brass.m}" stroke="${INK}" stroke-width="1"/>`;
+  thr += rod([40, 52, 48], [40, 55.6, 48], .35, MAT.steel, tone, .6) + wheel([40, 55.8, 48], 'y', 2.8, st.thr * 4, MAT.brass, { spokes: 4, thick: .6 });
+  s += act('throttle', thr);
+  const gv = st.gov, phi = (16 + 34 * gv) * Math.PI / 180, top = [46, 52, 63], zs = 50.5 + 4.5 * gv;
+  s += rod([46, 52, 42], top, .5, MAT.steel, tone, .7) + rod([46, 52, zs], [40.6, 52, 49], .3, MAT.steel, tone, .6);
+  const balls = [0, Math.PI].map(o => { const th = st.gang + o; return [46 + 8 * Math.sin(phi) * Math.cos(th), 52 + 8 * Math.sin(phi) * Math.sin(th), 63 - 8 * Math.cos(phi)]; })
+    .sort((a, b) => depthOf(a) - depthOf(b));
+  for (const b of balls){ const mid = lerp3(top, b, .5); s += rod(top, b, .3, MAT.steel, tone, .6) + rod([46, 52, zs], mid, .25, MAT.steel, tone, .5) + ball(b, 1.7, MAT.brass, .9); }
+  s += cyl(46, 52, zs - 1, zs + 1, 1.15, MAT.brass, tone, .8) + ball(top, .8, MAT.brass, .7);
+
+  // guides, crosshead, piston rod, connecting rod, crank
+  s += rod([55, 52, 27.3], [78, 52, 27.3], .7, MAT.steel, tone, .8) + rod([55, 52, 20.7], [78, 52, 20.7], .7, MAT.steel, tone, .8);
+  s += cylX(52, 54, SE_Y, SE_Z, 1.9, MAT.brass) + rod([52, 52, SE_Z], [k.xch - 2, 52, SE_Z], .8, MAT.steel, tone, .8);
+  s += box(k.xch - 2.2, 50, 21.6, k.xch + 2.2, 54, 26.4, MAT.steel, tone, .9);
+  s += rod([k.xch, 52, SE_Z], [k.px, 52, k.pz], 1.15, MAT.steel, tone, 1);
+  s += rod([k.px, 51.5, k.pz], [k.px, 55.4, k.pz], .9, MAT.steel, tone, .7) + rod([SE_XC, 54.6, SE_Z], [k.px, 54.6, k.pz], 2, SE_GREEN, tone, 1);
+  s += shape(on(PY(55.4), ellUV(SE_XC, SE_Z, 2.1, 2.1, 16)), MAT.steel.l, .8);
+
+  // steam and smoke, the token legend
+  if (steamOn && !st.hand) s += puffs([40, 40, 62.5], st.t, Math.min(1, st.speed * 1.1), { speed: .3 + st.speed * .5, rise: 20, r1: 6 });
+  s += puffs([4, 74, 64.5], st.t, st.fire * .8, { col: '#b3b9c0', speed: .25, rise: 18, r1: 5.5, drift: [.15, -.25] });
+  s += legend(steamOn ? [['live', 'Fresh steam'], ['used', 'Used steam']] : [], [74, 20, 66]);
+
+  // labels: five always, the rest when a step needs them
+  const show = n => ['Boiler', 'Throttle', 'Cylinder', 'Flywheel', 'Governor'].includes(n) || LIT.has(n);
+  const T = (p, dx, dy, n) => show(n) ? tag(p, dx, dy, n) : '';
+  s += T([1.5, 74, 32], -34, -30, 'Boiler') + T([10, 80, 7], -40, 22, 'Firebox') + T([10, 79.4, 37], -52, 12, 'Pressure gauge');
+  s += T([40, 56, 48], -42, -24, 'Throttle') + T([47.6, 52, 56], 36, -30, 'Governor');
+  s += T([36, SE_SEC, 37], -46, -6, 'Slide valve') + T([k.xp, SE_SEC, 18], -34, 34, 'Piston') + T([29, 59, 20], -40, 26, 'Cylinder');
+  s += T([k.xch, 54, 26], 10, -40, 'Crosshead') + T(lerp3([k.xch, 52, SE_Z], [k.px, 52, k.pz], .45), -16, 42, 'Connecting rod');
+  s += T([k.px, 55, k.pz], 46, 16, 'Crank') + T(ec, 30, -32, 'Eccentric') + T([SE_XC + 13, 39.6, SE_Z + 13], 30, -20, 'Flywheel');
+  return s;
+}
+
+// ---- the running engine: speed follows steam force against load (a simple model, see simplified) ----
+const SE_SET = .8;                                  // the speed the governor is set to hold
+function seStep(st, dt){
+  const force = st.thr * st.press;
+  st.speed = Math.max(0, st.speed + (force - .35 * st.load - .75 * st.speed) * 1.3 * dt);
+  if (st.govOn) st.thr = clamp(.6 + 10 * (SE_SET - st.speed));
+  st.gov = clamp((st.speed - .15) / 1.0);
+}
+function seLive(st, dt){
+  if (!st.hand) st.ang += st.speed * 2 * Math.PI * .45 * dt;
+  st.gang += st.speed * 2 * Math.PI * .9 * dt;
+}
+function seTick(st, dt){ if (!st.govOn) st.thr = st.thrHand / 100; st.load = st.loadPct / 100; seStep(st, dt); seLive(st, dt); }
+function seObserve(st){
+  const pct = Math.round(st.speed / SE_SET * 100), thr = Math.round(st.thr * 100);
+  if (st.govOn) return `Speed ${pct}% of the set speed. The governor has the throttle ${thr}% open to match the load.` + (st.load > .5 ? ' It runs a little slow under this load, because the speed must drop before the governor acts.' : '');
+  if (st.thr < .02) return 'The throttle is shut, so no steam reaches the cylinder. The engine slows to a stop.';
+  return `No governor: speed ${pct}% of the set speed. A bigger load slows the engine. Open the throttle to give it more steam.`;
+}
+
+mountLesson({
+  title: 'How does a steam engine work?',
+  level: 'adult',
+  guess: false,
+  palette: SE_GREEN,
+  state: { t: 0, fire: 0, press: 0, thr: 0, speed: 0, load: 0, gov: 0, ang: 0, gang: 0, hand: 0, govOn: true, thrHand: 60, loadPct: 0 },
+  stats: st => [{ label: 'Boiler', value: st.press < .05 ? 'Cold' : st.press < .95 ? 'Heating' : 'Steam up', small: true },
+    { label: 'Speed', value: st.hand ? 'By hand' : Math.round(st.speed / SE_SET * 100) + '%' }, st.load > .02 ? { label: 'Load', value: Math.round(st.load * 100) + '%', small: true } : null],
+  scene,
+  live: seLive,
+  intro: 'A steam engine turns the heat of a fire into a turning shaft that can drive machines. This is a classic stationary engine, with its cylinder cut open on the side so you can see inside. Light the fire to start.',
+  parts: {
+    'Boiler': 'A closed vessel of water. Heating it raises both the temperature and the pressure of the steam inside.',
+    'Firebox': 'Where the fire burns. Its heat goes into the water in the boiler. The fire never pushes the piston itself.',
+    'Pressure gauge': 'Shows how much pressure is in the boiler. A safety valve on top lets steam out if the pressure gets too high.',
+    'Throttle': 'A valve in the steam pipe. Opening it lets more steam reach the engine; closing it lets less through.',
+    'Slide valve': 'A sliding block in the steam chest. It opens the port to one end of the cylinder while joining the other end to the exhaust.',
+    'Cylinder': 'The piston slides inside it. Steam enters each end in turn through a port.',
+    'Piston': 'Steam pushes it one way, then the other. Its rod carries the push out of the cylinder.',
+    'Crosshead': 'The block at the end of the piston rod. It slides between guides so the rod stays straight and isn’t bent.',
+    'Connecting rod': 'Joins the crosshead to the crank and carries the piston’s push to it.',
+    'Crank': 'An arm on the crankshaft. The connecting rod pushes it round, turning back-and-forth motion into rotation.',
+    'Eccentric': 'A disc fixed off-centre on the crankshaft. As the shaft turns, it slides the valve back and forth in time with the piston.',
+    'Flywheel': 'A heavy wheel on the crankshaft. It stores energy, smooths the turning and carries the crank past the dead centres. It adds no power.',
+    'Governor': 'Two spinning balls driven by the engine. They swing out as it speeds up and drop as it slows, closing or opening the throttle.',
+  },
+  steps: [
+    { title: 'Raise steam', lit: ['Firebox', 'Boiler', 'Pressure gauge'],
+      do: { label: 'Light the fire', part: 'fire', at: [10, 80.2, 6.5], hint: 'Light the fire under the boiler.' },
+      say: 'The fire heats the water in the closed boiler. The water turns to steam, and because it can’t escape, the pressure rises. In the open air, water swells about 1,600 times as it turns to steam. The gauge shows the pressure.',
+      run(st, ui){ ui.tween({ fire: 1, press: 1 }, 3); } },
+    { title: 'Open the throttle', lit: ['Throttle', 'Slide valve'],
+      do: { label: 'Open the throttle', part: 'throttle', at: [40, 56, 48], hint: 'Turn the throttle wheel to let steam into the engine.' },
+      say: 'The throttle lets steam from the boiler into the steam chest on top of the cylinder. There, the slide valve sends it into one end of the cylinder. The steam pushes the piston, and the engine starts to turn.',
+      run(st, ui){ ui.tween({ thr: .95, speed: SE_SET, gov: SE_SET - .15 }, 2.8); } },
+    { title: 'Push, then push back', lit: ['Slide valve', 'Piston', 'Eccentric'], zoom: { at: [40, SE_SEC, 29], k: 2.3 },
+      drag: { label: 'Drag to turn the engine slowly through one turn', secs: 5 },
+      guess: { q: 'The slide valve must swap ends at exactly the right moment, every stroke. What moves it?',
+        choices: ['The engine driver, by hand', 'The governor', 'An eccentric on the crankshaft'], answer: 2,
+        why: 'An eccentric is a disc fixed off-centre on the crankshaft. As the shaft turns, its rod slides the valve, so the timing follows the crank and piston automatically.' },
+      say: 'Once every stroke, the slide valve moves over. Fresh steam now enters the other end and pushes the piston back, while the used steam escapes to the exhaust. Pushing on both strokes is called double-acting. An eccentric on the crankshaft moves the valve.',
+      run(st, ui){ st.hand = 1; const a0 = st.ang; let t = 0; ui.animate(dt => { t = Math.min(1, t + dt / 5); st.ang = a0 + 2 * Math.PI * t; return t < 1; }); } },
+    { title: 'Crank and flywheel', lit: ['Crosshead', 'Connecting rod', 'Crank', 'Flywheel'],
+      guess: { q: 'What does the heavy flywheel do?',
+        choices: ['It adds extra power', 'It carries the crank past the dead points and smooths the turning', 'It brakes the engine when it runs too fast'], answer: 1,
+        why: 'The flywheel stores energy from each push and gives it back between pushes. That carries the crank past the points where the rod can’t turn it, and evens out the speed.' },
+      say: 'The piston rod ends in a crosshead that slides between guides, so the rod stays straight. The connecting rod pushes the crank round, turning back-and-forth into rotation. Twice a turn, rod and crank line up and can’t push. The heavy flywheel carries the crank past these dead centres.',
+      run(st, ui){ st.hand = 0; ui.tween({ speed: SE_SET }, .6); } },
+    { title: 'The governor', lit: ['Governor', 'Throttle'],
+      drag: { label: 'Drag to give the engine more work', secs: 4 },
+      say: 'Give the engine more work and it slows down. The governor’s spinning balls drop, which opens the throttle and lets in more steam, so the speed recovers. If the engine speeds up, the balls rise and close the throttle. The speed stays nearly steady but dips a little under load.',
+      run(st, ui){ st.hand = 0; st.thr = .95; let t = 0; const thr0 = st.thr;
+        // one timeline the slider can drive: the load comes on, the engine slows, the governor opens the throttle
+        ui.animate(dt => { t = Math.min(1, t + dt / 4); const L = ease(Math.min(1, t / .25));
+          const dip = Math.sin(Math.PI * Math.min(1, t / .7)) * .22 * (t < .7 ? 1 : 0);
+          st.load = L; st.speed = SE_SET - .033 * L - dip * L; st.gov = clamp((st.speed - .15) / 1.0);
+          st.thr = clamp(thr0 + (1 - thr0) * L * Math.min(1, t / .35)); return t < 1; }); } },
+  ],
+  tryit: {
+    say: 'Change the load and switch the governor on or off. With the governor off, set the throttle yourself.',
+    setup(st){ Object.assign(st, { fire: 1, press: 1, hand: 0, govOn: true, thrHand: 60, loadPct: 0, load: 0, speed: SE_SET, thr: .6 }); },
+    tick: seTick,
+    observe: seObserve,
+    controls: [
+      { type: 'range', key: 'loadPct', label: 'Load (work the engine drives)', min: 0, max: 100, step: 10, format: v => v + '%' },
+      { type: 'range', key: 'thrHand', label: 'Throttle by hand (governor off)', min: 0, max: 100, step: 10, format: v => v + '%' },
+      { type: 'toggle', key: 'govOn', label: 'Governor connected' },
+    ],
+  },
+  idea: 'Steam pushes a piston one way, then the other. The engine moves its own valve to time each push, and a crank and flywheel turn the pushes into steady rotation.',
+  simplified: [
+    'The cylinder and steam chest are shown cut open, drawn flat on the side.',
+    'The picture turns far slower than a real engine so you can follow the valve. Speed is shown as a share of the speed the governor is set to hold.',
+    'Real slide valves have lap and lead, and many engines cut off the steam early and let it expand. The valve timing here is simplified.',
+    'The drive that turns the governor from the crankshaft isn’t drawn. In this engine the governor works the throttle; many later engines let it change the cutoff instead.',
+    'This engine exhausts to the air. Many engines sent the steam to a condenser, which saved a great deal of fuel. The sandbox uses a simple model of steam force against load.',
+  ],
+  check: [
+    { q: 'In a double-acting engine, when does steam push the piston?',
+      choices: ['Only on the stroke away from the crank', 'On both strokes, from alternate sides', 'Only when the flywheel slows down'], answer: 1,
+      why: 'Steam is let into each side of the piston in turn, so it is pushed on both strokes.' },
+    { q: 'James Watt added a separate condenser. Why did that save fuel?',
+      choices: ['The cylinder no longer had to be cooled and reheated every stroke', 'It made the fire burn hotter', 'It let the engine run without a governor'], answer: 0,
+      why: 'Condensing the steam in a separate vessel let the cylinder stay hot. Engines with it burned about two thirds less coal.' },
+    { q: 'A heavy machine is connected to an engine with a governor. What happens?',
+      choices: ['The balls rise and the throttle closes', 'The engine slows a little, the balls drop and the throttle opens', 'The safety valve opens to give more power'], answer: 1,
+      why: 'The load slows the engine, so the balls fall and the throttle opens wider. More steam brings the speed back up, though a little below where it was.' },
+  ],
+  sources: [
+    { title: 'Britannica: Steam engine', url: 'https://www.britannica.com/technology/steam-engine', note: 'Steam under pressure pushes the piston; double-acting; the condenser' },
+    { title: 'Cressy, All About Engines (Cassell, 1918)', url: 'https://tekniskkulturarv.dk/book/1f27ff65-d9e1-4208-9d2d-9778a4ac55ec?page=23', note: 'Boiler, gauge, safety valve, throttle, crosshead, crank, flywheel, eccentric, governor, cutoff' },
+    { title: 'Tennant, The Slide Valve Simply Explained (1899), Project Gutenberg', url: 'https://www.gutenberg.org/cache/epub/76510/pg76510-images.html', note: 'Valve admits on one side while the other exhausts; the eccentric; dead centres' },
+    { title: 'Smithsonian NMAH: Demonstration model of a slide valve', url: 'https://si.edu/object/demonstration-model-slide-valve-steam-engine:nmah_846128', note: 'Inlet and exhaust ports opened alternately at each end' },
+    { title: 'University of Illinois Physics Van: Water expanding the most', url: 'https://van.physics.illinois.edu/qa/listing.php?id=1734', note: 'Water expands about 1,600 times as steam at atmospheric pressure' },
+    { title: 'University of Cambridge Engineering: Lego steam engine', url: 'https://mi.eng.cam.ac.uk/IALego/steam.html', note: 'Flywheel; governor opens the valve when a machine is connected' },
+    { title: 'UW-Madison Ingersoll Physics Museum: Centrifugal governor', url: 'https://www.physics.wisc.edu/ingersollmuseum/exhibits/mechanics/centrifugalgovernor', note: 'The governor regulates speed by controlling the steam' },
+    { title: 'Welbury, The Speed Regulation of Steam Engines (Institute of Marine Engineers, 1903)', url: 'https://library.imarest.org/record/808/files/800.pdf', note: 'Speed must change before the governor acts; a few per cent drop under load' },
+    { title: 'Linda Hall Library: James Watt', url: 'https://www.lindahall.org/about/news/scientist-of-the-day/james-watt/', note: 'Double-acting engine; the separate condenser kept the cylinder hot' },
+    { title: 'Science Museum Group: James Watt and the separate condenser', url: 'https://blog.sciencemuseum.org.uk/james-watt-and-the-separate-condenser', note: 'About two thirds less coal' },
+  ],
+});
+</script>
+</body>
+</html>
