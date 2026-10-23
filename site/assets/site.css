@@ -112,7 +112,7 @@ body.scrolled .bar{border-bottom-color:var(--line)}
 .meta a{color:var(--ink)}
 
 /* hero */
-.hero{padding:clamp(48px,8vw,112px) 0 0}
+.hero{padding:clamp(48px,8vw,112px) 0 var(--sp)}
 .demo{margin:clamp(48px,6vw,72px) 0 0}
 .demo .screen{position:relative;aspect-ratio:16/10;border-radius:var(--r);overflow:hidden;background:var(--paper);box-shadow:0 0 0 1px var(--line)}
 .demo iframe,.demo video{position:absolute;inset:0;width:100%;height:100%;border:0;object-fit:cover}
@@ -120,11 +120,13 @@ body.scrolled .bar{border-bottom-color:var(--line)}
 .demo figcaption a{color:var(--ink)}
 
 /* bands */
-.band{padding:var(--sp) 0 0}
-.band.tight{padding-top:clamp(56px,7vw,96px)}
-.band.mist{border-top:1px solid var(--line);padding-top:var(--sp);margin-top:var(--sp)}
+/* sections: each one is a full band with equal space above and below. They take turns between white and
+   mist, so the eye sees where one ends; .cont continues the band above it (same background, no new gap). */
+.band{padding:var(--sp) 0}
+.band.tight{padding-top:0}
+.band.cont{padding-top:0}
+.band.mist{background:var(--mist)}
 
-.band.dark{border-top:1px solid var(--line);padding-top:var(--sp);margin-top:var(--sp)}
 
 .idea .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:start}
 .idea h2{font-size:var(--fs-h2)}
@@ -202,8 +204,7 @@ code.inline{font:400 .88em var(--mono);letter-spacing:0;background:rgb(21 26 26 
 .cards .title{font-weight:500;font-size:var(--fs-body);letter-spacing:-.015em;margin-top:14px}
 
 /* footer */
-.foot{background:var(--ink);color:rgb(255 255 255 / .62);padding:40px 0 48px;margin-top:var(--sp);font-size:var(--fs-xs)}
-.band.mist + .foot,main:has(> .band.mist:last-child) + .foot{margin-top:0}
+.foot{background:var(--ink);color:rgb(255 255 255 / .62);padding:40px 0 48px;font-size:var(--fs-xs)}
 .foot img{height:32px;width:auto;margin-bottom:20px}
 .foot nav{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;font-size:var(--fs-sm)}
 .foot nav a{color:var(--paper);text-decoration:none}

@@ -220,7 +220,7 @@ ${p.demo ? `<div class="wrap"><figure class="demo">
 </figure></div>` : ""}
 </section>
 
-${p.feature ? `<section class="band dark idea"><div class="wrap split">
+${p.feature ? `<section class="band mist idea"><div class="wrap split">
   <h2>${esc(p.feature.title)}</h2>
   <p>${esc(p.feature.text)}</p>
 </div></section>` : ""}
@@ -233,7 +233,7 @@ ${p.examples?.length ? `<section class="band" aria-labelledby="ex-title"><div cl
   </div>
 </div></section>` : ""}
 
-${p.gallery?.items?.length ? `<section class="band tight" aria-labelledby="gal-title"><div class="wrap">
+${p.gallery?.items?.length ? `<section class="band cont" aria-labelledby="gal-title"><div class="wrap">
   <h2 id="gal-title">${esc(p.gallery.title || `More made with ${p.name}`)}</h2>
   ${p.gallery.text ? `<p class="intro">${esc(p.gallery.text)}</p>` : ""}
   <div class="gallery" style="--n:${Math.min(p.gallery.items.length, 5)}">${p.gallery.items.map((g) => tile(g, { ratio: "square" })).join("")}</div>
@@ -251,7 +251,7 @@ ${p.prompts?.length ? `<section class="band" aria-labelledby="pr-title"><div cla
   <ul class="prompts">${p.prompts.map((t) => `<li><span>${esc(t)}</span><button class="copy" type="button" data-copy="${esc(t)}" aria-label="Copy prompt: ${esc(t)}">Copy</button></li>`).join("")}</ul>
 </div></section>` : ""}
 
-${p.faq?.length ? `<section class="band" aria-labelledby="faq-title"><div class="wrap narrow">
+${p.faq?.length ? `<section class="band mist" aria-labelledby="faq-title"><div class="wrap narrow">
   <h2 id="faq-title">Questions</h2>
   <div class="faq">${p.faq.map((f) => `<details><summary>${esc(f.q)}</summary><div class="a">${f.aHtml}</div></details>`).join("")}</div>
 </div></section>` : ""}
