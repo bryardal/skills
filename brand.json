@@ -15,6 +15,7 @@
   "substackUrl": "https://bryantardal.substack.com",
   "logo": "/assets/brand/lockup.png",
   "logoDark": "/assets/brand/lockup-white.png",
+  "footerMark": "/assets/brand/mark-white.png",
   "icon": "/assets/brand/icon.png",
   "colors": {
     "ink": "#151A1A",

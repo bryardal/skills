@@ -84,7 +84,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}">
 export const topbar = (brand, links = []) => `
 <a class="skip" href="#main">Skip to content</a>
 <header class="bar"><div class="wrap">
-  <a class="brand" href="${esc(brand.homeUrl)}" aria-label="${esc(brand.brandName)}, home"><img src="${esc(brand.logo)}" alt="${esc(brand.brandName)}" width="113" height="36"></a>
+  <a class="brand" href="${esc(brand.homeUrl)}" aria-label="${esc(brand.brandName)}, home"><img src="${esc(brand.logo)}" alt="${esc(brand.brandName)}" width="138" height="44"></a>
   <nav aria-label="Site">${links.map((l) => `<a href="${esc(l.href)}"${l.external ? ext : ""}>${esc(l.label)}</a>`).join("")}</nav>
 </div></header>`;
 
@@ -121,7 +121,7 @@ const join = (brand) => `
 
 export const footer = (brand, extraHtml = "") => `
 <footer class="foot"><div class="wrap">
-  <img src="${esc(brand.logoDark)}" alt="${esc(brand.brandName)}" width="94" height="30">
+  <img src="${esc(brand.footerMark)}" alt="${esc(brand.brandName)}" width="25" height="32">
   <nav aria-label="Elsewhere">
     <a href="${esc(brand.x.url)}"${ext}>${esc(brand.x.handle)} on X</a>
     <a href="${esc(brand.substackUrl)}"${ext}>Newsletter</a>
