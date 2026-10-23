@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 // Every page uses the small type scale in site/assets/site.css (same scale as siaccelerator.co).
-// Only --fs-display, the skill name, may go past 44px, and never past 56px.
+// Nothing may go past 44px, the siaccelerator.co headline size.
 const css = readFileSync(new URL("../site/assets/site.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
 
 test("text sizes come only from the --fs-* scale", () => {
@@ -17,7 +17,7 @@ test("the scale stays small", () => {
   const tokens = [...css.matchAll(/--fs-([a-z0-9]+):([^;]+);/g)];
   assert.ok(tokens.length >= 8);
   for (const [, name, value] of tokens) {
-    const max = name === "display" ? 56 : 44;
+    const max = 44;
     for (const [, px] of value.matchAll(/(\d+(?:\.\d+)?)px/g)) assert.ok(Number(px) <= max, `--fs-${name} ${value} goes past ${max}px`);
   }
 });
