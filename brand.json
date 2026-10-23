@@ -12,9 +12,9 @@
     "url": "https://x.com/bryantardal"
   },
   "substackUrl": "https://bryantardal.substack.com",
-  "logo": "/assets/brand/logo.png",
-  "logoDark": "/assets/brand/logo-white.png",
-  "icon": "",
+  "logo": "/assets/brand/lockup.png",
+  "logoDark": "/assets/brand/lockup-white.png",
+  "icon": "/assets/brand/icon.png",
   "colors": {
     "ink": "#151A1A",
     "paper": "#FFFFFF",
@@ -23,8 +23,8 @@
   },
   "email": {
     "fromName": "Bry Ardal",
-    "fromAddress": "TODO_FROM_ADDRESS",
-    "replyTo": "TODO_REPLY_TO"
+    "fromAddress": "hi@siaccelerator.co",
+    "replyTo": "bryantardal@gmail.com"
   },
   "turnstileSiteKey": "TODO_TURNSTILE_SITE_KEY",
   "privacyUrl": "/privacy"

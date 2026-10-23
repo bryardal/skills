@@ -6,8 +6,8 @@ export const brand = {
   "siteUrl": "https://skills.siaccelerator.co",
   "email": {
     "fromName": "Bry Ardal",
-    "fromAddress": "TODO_FROM_ADDRESS",
-    "replyTo": "TODO_REPLY_TO"
+    "fromAddress": "hi@siaccelerator.co",
+    "replyTo": "bryantardal@gmail.com"
   },
   "x": {
     "handle": "@bryantardal",
