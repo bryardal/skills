@@ -78,6 +78,8 @@ ${image ? `<meta property="og:image" content="${esc(image)}">
 <link rel="preload" href="/assets/fonts/geist-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=${cssV}">
 <script>window.SIA=${JSON.stringify({ turnstileSiteKey: brand.turnstileSiteKey })}</script>
+<script>/* show the email gate before the first paint for visitors who haven't signed up (site.js takes over) */
+(function(){var m=false;try{m=localStorage.getItem("sia_member")==="1"}catch(e){}if(!m&&document.cookie.split("; ").indexOf("sia_member=1")<0)document.documentElement.classList.add("pre-gate")})()</script>
 <script src="/assets/site.js?v=${jsV}" defer></script>
 </head>`;
 

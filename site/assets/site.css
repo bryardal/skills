@@ -219,6 +219,9 @@ code.inline{font:400 .88em var(--mono);letter-spacing:0;background:rgb(21 26 26 
 /* email gate */
 .gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;background:rgb(255 255 255 / .55);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2)}
 .gate[hidden]{display:none}
+/* before site.js runs: a gated page shows the gate on first paint, so the page never flashes */
+html.pre-gate body[data-gated="true"] .gate[hidden]{display:grid}
+html.pre-gate body[data-gated="true"]{overflow:hidden}
 .gate .box{width:min(440px,100%);max-height:calc(100dvh - 40px);overflow:auto;background:var(--paper);color:var(--ink);border-radius:var(--r-lg);padding:clamp(28px,5vw,40px);box-shadow:0 0 0 1px var(--line),0 24px 64px -32px rgb(21 26 26 / .25)}
 .gate .box img{height:28px;width:auto;margin-bottom:28px}
 .gate h2{font-size:var(--fs-h2)}

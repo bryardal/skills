@@ -92,6 +92,7 @@
   const closeGate = () => {
     if (!gate) return;
     gate.hidden = true; document.body.classList.remove("gated");
+    document.documentElement?.classList.remove("pre-gate");
     if (main) { main.inert = false; main.focus({ preventScroll: true }); }
     window.dispatchEvent(new Event("sia:unlocked"));
   };
