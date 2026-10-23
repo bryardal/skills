@@ -99,12 +99,12 @@ const signupForm = (button) => { const id = `email-${++formN}`; return `
 </form>
 <p class="form-msg" role="status" aria-live="polite"></p>`; };
 
-export const gate = (brand, skillName) => `
+export const gate = (brand, skillName = "") => `
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" aria-describedby="gate-desc" hidden>
   <div class="box">
     <img src="${esc(brand.logo)}" alt="${esc(brand.brandName)}" width="94" height="30">
-    <h2 id="gate-title">Get ${esc(skillName)} free</h2>
-    ${signupForm("Get the skill")}
+    <h2 id="gate-title">Get ${skillName ? esc(skillName) : "the skills"} free</h2>
+    ${signupForm(skillName ? "Get the skill" : "Get the skills")}
     <p class="fine" id="gate-desc">We'll email you when new skills ship. Unsubscribe any time. <a href="${esc(brand.privacyUrl)}">Privacy</a></p>
   </div>
 </div>`;
@@ -264,7 +264,7 @@ ${gate(brand, p.name)}
 /* ---------- hub index ---------- */
 
 export const hub = (pages, brand) => `${head({ title: `Skills · ${brand.brandName}`, description: `Free skills for Claude and ChatGPT by ${brand.author}.`, url: brand.siteUrl, image: "", brand })}
-<body data-gated="false" data-skill="hub">
+<body data-gated="true" data-skill="hub">
 ${topbar(brand, [{ label: brand.author, href: brand.authorUrl, external: true }])}
 <main id="main" tabindex="-1">
 <section class="hero"><div class="wrap">
@@ -281,6 +281,8 @@ ${topbar(brand, [{ label: brand.author, href: brand.authorUrl, external: true }]
 ${join(brand)}
 </main>
 ${footer(brand)}
+${gate(brand)}
+<noscript><style>.gate{display:none!important}</style></noscript>
 </body></html>
 `;
 

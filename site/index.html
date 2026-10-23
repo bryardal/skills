@@ -21,10 +21,10 @@
 <link rel="preload" href="/assets/fonts/geist-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/geist-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=db94c143">
-<script>window.SIA={"turnstileSiteKey":"TODO_TURNSTILE_SITE_KEY"}</script>
+<script>window.SIA={"turnstileSiteKey":"0x4AAAAAAFiAhvEnXZ7AvEYG"}</script>
 <script src="/assets/site.js?v=24b020e0" defer></script>
 </head>
-<body data-gated="false" data-skill="hub">
+<body data-gated="true" data-skill="hub">
 
 <a class="skip" href="#main">Skip to content</a>
 <header class="bar"><div class="wrap">
@@ -75,4 +75,22 @@
     
   </div>
 </div></footer>
+
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" aria-describedby="gate-desc" hidden>
+  <div class="box">
+    <img src="/assets/brand/lockup.png" alt="Superintelligence Accelerator" width="94" height="30">
+    <h2 id="gate-title">Get the skills free</h2>
+    
+<form class="form js-signup" novalidate>
+  <label class="sr-only" for="email-3">Email address</label>
+  <input id="email-3" name="email" type="email" inputmode="email" autocomplete="email" placeholder="Your email" required>
+  <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+  <button class="btn" type="submit">Get the skills</button>
+  <div class="ts"></div>
+</form>
+<p class="form-msg" role="status" aria-live="polite"></p>
+    <p class="fine" id="gate-desc">We'll email you when new skills ship. Unsubscribe any time. <a href="/privacy">Privacy</a></p>
+  </div>
+</div>
+<noscript><style>.gate{display:none!important}</style></noscript>
 </body></html>
