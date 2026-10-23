@@ -8,6 +8,13 @@
 // - Section order follows the skill page layout: hero + live demo, the one idea, three examples, gallery,
 //   install, prompts, questions, footer.
 
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+
+// Cache-busting: each asset URL carries a short hash of its contents, so a changed file gets a new URL.
+const ver = (file) => createHash("sha256").update(readFileSync(new URL(`../site/assets/${file}`, import.meta.url))).digest("hex").slice(0, 8);
+const cssV = ver("site.css"), jsV = ver("site.js");
+
 export const esc = (s = "") =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -69,9 +76,9 @@ ${image ? `<meta property="og:image" content="${esc(image)}">
 <meta name="twitter:description" content="${esc(description)}">
 <link rel="preload" href="/assets/fonts/geist-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/geist-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css?v=${cssV}">
 <script>window.SIA=${JSON.stringify({ turnstileSiteKey: brand.turnstileSiteKey })}</script>
-<script src="/assets/site.js" defer></script>
+<script src="/assets/site.js?v=${jsV}" defer></script>
 </head>`;
 
 export const topbar = (brand, links = []) => `
