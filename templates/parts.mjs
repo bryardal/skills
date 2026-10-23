@@ -95,7 +95,7 @@ const signupForm = (button) => { const id = `email-${++formN}`; return `
 export const gate = (brand, skillName) => `
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" aria-describedby="gate-desc" hidden>
   <div class="box">
-    <img src="${esc(brand.logoDark)}" alt="${esc(brand.brandName)}" width="94" height="30">
+    <img src="${esc(brand.logo)}" alt="${esc(brand.brandName)}" width="94" height="30">
     <h2 id="gate-title">Get ${esc(skillName)} free</h2>
     <p id="gate-desc">Enter your email to open the page and install the skill. You'll also hear when a new skill ships.</p>
     ${signupForm("Continue")}
@@ -115,7 +115,7 @@ const join = (brand) => `
 
 export const footer = (brand, extraHtml = "") => `
 <footer class="foot"><div class="wrap">
-  <img src="${esc(brand.logoDark)}" alt="${esc(brand.brandName)}" width="94" height="30">
+  <img src="${esc(brand.logo)}" alt="${esc(brand.brandName)}" width="94" height="30">
   <nav aria-label="Elsewhere">
     <a href="${esc(brand.x.url)}"${ext}>${esc(brand.x.handle)} on X</a>
     <a href="${esc(brand.substackUrl)}"${ext}>Newsletter</a>
