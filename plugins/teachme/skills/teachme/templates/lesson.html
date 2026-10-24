@@ -9,8 +9,11 @@
 <script src="teach.js"></script>
 <script>
 /* Lesson: __TITLE__ Level: __LEVEL__. Facts: facts.md.
-   Real process: (one line per stage, from facts.md)
+   Real process: (one line per stage, from facts.md: where every material, signal or amount is after it)
+   Parts list: (the real parts, grouped: body or frame, working parts, controls, what moves through it)
    Sandbox facts: (the sourced what-ifs the sandbox follows) */
+
+// ---- one small model: every number shown and every moving part comes from it ----
 
 // ---- geometry (prefix every name, e.g. xxBody, so nothing clashes with the engine) ----
 
@@ -30,6 +33,9 @@ function xxObserve(st){ return ''; }
 mountLesson({
   title: '__TITLE__',
   level: '__LEVEL__',
+  kind: 'machine',                                  // 'machine' (objects, devices), 'living' (bodies, cells, plants) or 'idea'
+  // scale: 'Schematic, not to scale',              // living things: say whether the drawing is to scale
+  // notice: 'Educational, not medical advice.',    // health, medicine and drug topics
   guess: __GUESS__,
   autoZoom: true,                                   // each step frames its lit parts
   reveal: true,                                     // labels appear as their parts are introduced

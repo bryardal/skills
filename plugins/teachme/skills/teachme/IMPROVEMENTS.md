@@ -4,6 +4,11 @@ Ranked by how many test lessons hit the problem (see `evals/results/`). Move an 
 
 ## Next
 
+0. **v2 stress test done** (10 lessons, results in `evals/results/2026-10-24.md`; fixes in CHANGELOG 2.1). Still
+   open from it: a way to show sideways motion seen from the side (a bike chain shifting cogs: a small top-view
+   inset by default?); gears whose chain links sit in the teeth; an "explode by depth" helper; a cell-scale kit
+   beyond `alveoli` and `enzyme` (a nephron, a synapse); pins on the poster that check their point is on a drawn
+   part at that moment.
 1. **Visual polish** (blind average 3.5, the lowest dimension). Ideas: soft rim light on people and props, fewer
    faded labels at once, a cleaner look for charts beside 3D scenes (one shared scale). Source: round 2 review.
 2. **Abstract steps** (reward, caring, a judge's instruction). A small set of "consequence" parts: a heart or

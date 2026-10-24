@@ -1,5 +1,109 @@
 # Changelog
 
+## 2.1 (24 Oct 2026): printables, organs, machine parts, effects, audits, turning
+
+Stress test: 10 lessons the skill had never seen (heart, bike gears, kidneys, ibuprofen, candle, lungs, toilet
+cistern, knee-jerk reflex, DNA copying, fridge), each built by its own agent from SKILL.md alone, then reviewed
+blind. Fixes from it, all in this release:
+- **New parts the builders had to hand-write:** `belt` (a belt or bike chain round any number of wheels, links
+  moving with the drive, `.at(s)` to ride a token on it), `incline` (a slope with `.pt`, `.along`, `.up`) and
+  `force` (arrows sized by the force), `arm` (shoulder to fingertips, elbow bend, biceps bulge), `alveoli` (air sacs wrapped in capillaries), `enzyme` (a protein
+  with a binding pocket), `flap` and `chain`, `pad` (an invisible press area for thin parts), `upTo`, `pulse`
+  (a heartbeat or pump stroke), `bloodColour`, red blood cell tokens, `helix({seq, letters})` (a real base sequence
+  with A, T, G, C written on), legend keys that are colours or materials, and `do.at` that follows a moving part.
+- **Lighter pages:** a 48-tooth gear went from about 125 elements to about 11 (its side walls are joined by colour),
+  `latheAx` faces are joined too, organs are cached, and check.py names the busiest view when it passes about 1,500
+  elements. Round bodies closed at the end now get their rim outlined.
+- **Posters:** the overview picture is cropped to what is drawn at that moment, a very wide picture runs across the
+  page with the parts and steps under it, a wide one keeps the steps under the picture, and print.py shrinks the
+  text until every item fits (it reports anything still cut off and which labels each moment shows).
+- **check.py:** never crashes on a slow machine (long timeouts, a PROBLEM line instead); a covered press target
+  names what covers it and how to fix it; the video test waits long enough for long lessons with effects.
+- **Lesson player:** the pulsing ring on the part to press moves to the nearest point a tap really reaches (not
+  beside a thin part or under a label); labels that are not lit dim to 72% instead of 55%, so they stay readable.
+- **Picture stuck in the top-left corner:** fixed. When the window or preview panel changed size by a pixel or two
+  after the lesson opened (a scrollbar, the panel settling), the drawing jumped to the top-left corner until the
+  window was resized. The picture now stays centred, refits whenever its box changes size, and waits for a hidden
+  preview to get a size before it lays itself out.
+- **Saving inside Claude artifacts:** "Download video" and "Save the sheet" use the artifact viewer's save prompt
+  when the lesson is published with `capabilities: {downloads: true}` (SKILL.md now says to), and a plain download
+  link everywhere else.
+- **`scripts/update.py`:** moves a lesson that was already built or published onto the current engine (the lesson
+  itself is untouched), so old lessons get every fix; check.py now accepts already-built lessons too.
+- **Printing inside previews:** a lesson shown in a preview panel or embedded page (where the print dialog is
+  blocked without any message) now notices, and offers "Open in a new tab" or "Save the sheet": a page of just that
+  sheet that looks like the paper and opens the print dialog by itself. All four sheets tested this way.
+- **Show labels switch:** Options has a "Show labels" switch (and the L key) that hides every label in the picture
+  for a clean look, remembered per viewer; the video follows it, the printed sheets keep their numbered pins. A
+  lesson can start with labels off (`labels: false`); `?labels=0` opens it that way.
+- **Diagram sheet:** a tall picture fits its column, and the small step pictures leave out the legend.
+- Blind scores: picture 3.8, real detail 3.75, mean 3.78 across the 10 (`evals/results/2026-10-24.md`).
+- **Docs:** gear sizes, units and turning direction; flow's `amt`, `speed` and `r`; organs must be called inside
+  `scene()` (their points follow the view); `BLOOD_*` are materials; an element budget; open boxes and tanks drawn
+  with glass fronts; small hero parts get a zoom or inset; 3-6 labels visible at once (more in total with
+  `reveal`); natural word pairs; research fallbacks when sites are blocked or searches return spam (OpenStax,
+  LibreTexts, MedlinePlus, NIH, Britannica); the order of work without helper agents; how long check.py takes.
+
+- **Printable sheets.** Options, "Print or save as PDF": Worksheet, Poster (one page: the richest picture with
+  numbered pins, every part in one line, the steps), Labelled diagram (one landscape page: picture, parts table, a
+  strip of key steps with their parts lit) and Handout (overview, every step as a large still with its words and
+  readouts, quiz with answers, sources). Pictures are redrawn off screen for the page, so the live lesson is
+  untouched. A4 or Letter; poster and diagram always fit one page. New `scripts/print.py` makes the PDFs
+  (`--format`, `--paper letter`, `--png` to look at them); `?print=poster` opens a lesson ready to print.
+- **Organs.** `heart` (four chambers, septum, four valves that open and shut with `beat`, the great vessels),
+  `brain` (lobes, sulci, motor and sensory strips, cerebellum, brainstem), `lungs` (trachea with rings, branching
+  bronchi, 3 + 2 lobes, cardiac notch, diaphragm that moves with `breath`) and `kidney` (cortex, pyramids into
+  calyces, pelvis, ureter, renal artery and vein). Each gives named points (`.pt`) and flow routes (`.path`).
+- **Molecules.** `ribbon` (protein cartoon: coils, helices, strands as arrows) and `skeletal` (flat formulas).
+- **Machine parts.** `latheAx` (round bodies on any axis, shaded and ordered), `gear` with `gearAt` and `meshAng`
+  (gears that really mesh at the right speed ratio), `valve` (quarter-turn ball valve), `rail` and `carriage`,
+  `pipeline` (straight legs, smooth bends, bolted flanges, clamps). Screws and bolts now sit on any face or axis.
+- **Effects.** `flame` (flickering, candle or blue gas), `steam`, `waterSurface` (light rippling on water),
+  `stream`, `beam` and `pool` (light), `sparks`. Drawn with gradients and SVG filters so they also appear in the
+  video and in print; calm flat versions in Sketch and High contrast.
+- **Audits in check.py.** A lit name that matches no label, a lit label out of view in its own step, labels with no
+  parts text or pointing at empty space, outline lines that stop in mid-air, numbers in the lesson that facts.md
+  doesn't contain, and sizes that break the stated scale (`measure` and `unitsPer`). It found a real fault in the
+  steam-engine example (step 3 lit the eccentric while zoomed away from it), now fixed.
+- **Turning.** `turn: true` (or `{auto, start, pivot}`): the learner drags across the picture, presses the turn
+  buttons or uses [ and ] to turn the scene; the light stays with the viewer, boxes show whichever faces face the
+  viewer, flat parts keep facing the viewer, and the frame fits every side. Tested on molecule shapes, where it
+  helps; documented as for 3D shapes only, not machines.
+- **Tubes** draw as layered strokes (no gaps at bends), and pieces of a long tube overlap so curved joints never
+  show a seam.
+- **New example:** `molecule-shapes` (methane, ammonia and water you can turn; independently fact-checked).
+  `parts-gallery` shows every new part.
+
+## 2.0 (24 Oct 2026): machines, living things, real detail
+
+Version 2 makes /teachme the one skill for visual learning about objects, machines and living things. It keeps the
+v1 lesson player (steps, do and drag, guesses, sandbox, quiz, fact check, video, worksheet) and every v1 lesson
+works unchanged.
+
+- **Subject guides.** New `references/machines.md`: follow the real process (every material travels its real path,
+  every supply comes from something in the scene, one model drives every number), build it like the real thing,
+  physical rules for hinges, glass, liquids, streams, shadows and outlines, inventing a machine for an abstract idea,
+  exploded views and cutaways, pipes and cables that end on something, anti-patterns, and the close-up check. New
+  `references/living.md`: the real structure is the explanation, literal anatomy or a labelled metaphor, stated
+  scale, numbers with units and conditions, living shapes, and guidance for nerves, cells, molecules, plants, and
+  health and drug topics (mechanism only, never dosing advice).
+- **The detail pass.** Rule 3 in SKILL.md and drawing.md 3c: a machine or living thing reads as one clear thing at
+  1x, and every region still has something true to find when zoomed. Detail scales with the learner and is never
+  decoration. The rubric gains a "Real detail" score.
+- **New drawing parts.** Machines: `screw`, `screws`, `bolts`, `ticks`, `knob`, `slots`, `coil` (split round a
+  rod), `cable`, `shift` (exploded views). Living things: `tube` (smooth tapering vessels, nerves, hoses), `tree` and
+  `branch` (dendrites, roots, vessels, airways, merged at their joints), `membrane` (a lipid bilayer with gaps),
+  `channel` (a pore that opens, with an optional gate), `helix` (DNA with base pairs, or any helix), `molecule`
+  (ball-and-stick with chemistry colours). All of them work in every view and inside magnifier insets.
+- **New lesson options.** `kind` ('machine', 'living' or 'idea') picks the checks; `scale` and `notice` show under
+  the lesson and on the worksheet.
+- **check.py.** New notes: no `kind`, too few shapes for a machine or living picture, a living lesson with no
+  scale, a health topic with no notice. `--step N --crop x,y,w,h` takes a sharp 3x close-up.
+- **Ask first** now offers a course of 2-4 lessons when a topic is too big for one (a whole organ system, a car).
+- **New examples.** `nerve-signal` (a neuron with branching dendrites, myelin, a live voltage trace, a membrane
+  close-up with sodium and potassium channels and a synapse close-up; 22 facts, independently fact-checked) and
+  `parts-gallery` (every v2 part). All examples now declare their `kind`.
+
 ## 1.15 (22 Oct 2026): leaner and faster, same lessons
 
 Nothing a learner sees changes: built lessons render pixel-identical to 1.14 (checked on 4 lessons, 3 screen sizes,
@@ -283,7 +387,8 @@ they hit. Full results: `evals/results/2026-10-21.md`.
 
 ## 1.0 (21 Oct 2026): first version
 
-- Lesson engine (drawing core with a lesson layer on top): captions per step, guesses, a quiz, what this lesson leaves out, sources, keyboard and screen-reader
+- Lesson engine forked from Colorfigures (rotation code removed, wobble slider and colour swatches replaced by a
+  lesson layer): captions per step, guesses, a quiz, what this lesson leaves out, sources, keyboard and screen-reader
   support, full screen, printable worksheet.
 - Fact-check layer: research first, a fact sheet with sources, every claim traced, an independent check.
 - Examples: an electric kettle and compound interest.

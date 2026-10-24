@@ -5,77 +5,64 @@
   "metaDescription": "A free AI skill for Claude and ChatGPT. Ask about anything and get a fact-checked, hands-on lesson in one web page.",
   "askNoun": "a lesson",
   "demo": {
-    "src": "media/kettle-hero.mp4",
-    "liveUrl": "examples/kettle.html",
-    "caption": "This lesson came from one question: “How does a kettle know when to switch off?”",
+    "src": "media/diesel-engine-hero.mp4",
+    "liveUrl": "examples/diesel-engine.html",
+    "caption": "This lesson came from one line: “how a diesel engine inside a car works for a highschool student”",
     "liveLabel": "Try this lesson"
   },
   "feature": {
     "title": "Every lesson is hands-on",
-    "text": "In the kettle lesson, learners switch it on, heat the water and guess what happens next. Every lesson ends with a sandbox and a short quiz, and it lists the source for every fact."
+    "text": "In the diesel lesson, you squeeze the air, press the injector and guess what lights the fuel. Then you watch it burn and push the piston down. Every lesson ends with a sandbox and a short quiz, and it lists the source for every fact."
   },
   "examplesIntro": {
-    "title": "Each lesson starts with one question",
-    "text": "/teachme made each of these from a one-line question. No one wrote any code."
+    "title": "Each lesson starts with one line",
+    "text": "Version 2 draws machines, objects and living things in real detail, so you can zoom in and press the real parts. Each of these came from the line above it."
   },
   "examples": [
     {
-      "prompt": "how does a kettle know when to switch off?",
-      "title": "Electric kettle",
-      "media": "media/kettle-wide.mp4",
-      "href": "examples/kettle.html"
+      "prompt": "how a diesel engine inside a car works for a highschool student",
+      "title": "Diesel engine",
+      "media": "media/diesel-engine-wide.mp4",
+      "href": "examples/diesel-engine.html"
     },
     {
-      "prompt": "teach me photosynthesis",
-      "title": "Photosynthesis",
-      "media": "media/photosynthesis-wide.mp4",
-      "href": "examples/photosynthesis.html"
+      "prompt": "how an airplane flies and lands for a 12 year old",
+      "title": "How a plane flies and lands",
+      "media": "media/plane-wide.mp4",
+      "href": "examples/plane.html"
     },
     {
-      "prompt": "how do supply and demand set a price?",
-      "title": "Supply and demand",
-      "media": "media/supply-demand-wide.mp4",
-      "href": "examples/supply-demand.html"
+      "prompt": "how an analog watch works",
+      "title": "Mechanical watch",
+      "media": "media/watch-wide.mp4",
+      "href": "examples/watch.html"
+    },
+    {
+      "prompt": "how blood circulation works inside the body",
+      "title": "Blood circulation",
+      "media": "media/blood-circulation-wide.mp4",
+      "href": "examples/blood-circulation.html"
+    },
+    {
+      "prompt": "how photosynthesis works for a kid",
+      "title": "How a plant makes its food",
+      "media": "media/plant-food-wide.mp4",
+      "href": "examples/plant-food.html"
+    },
+    {
+      "prompt": "how a toilet flushes for an adult who doesn't think about it",
+      "title": "How a toilet flushes",
+      "media": "media/toilet-wide.mp4",
+      "href": "examples/toilet.html"
     }
   ],
-  "gallery": {
-    "title": "More made with /teachme",
-    "text": "Lessons on machines, money, government, space and language.",
-    "items": [
-      {
-        "title": "Steam engine",
-        "media": "media/steam-engine-square.mp4",
-        "href": "examples/steam-engine.html"
-      },
-      {
-        "title": "How a bill becomes law",
-        "media": "media/bill-to-law-square.mp4",
-        "href": "examples/bill-to-law.html"
-      },
-      {
-        "title": "Moon phases",
-        "media": "media/moon-phases-square.mp4",
-        "href": "examples/moon-phases.html"
-      },
-      {
-        "title": "How a sentence works",
-        "media": "media/sentence-square.mp4",
-        "href": "examples/sentence.html"
-      },
-      {
-        "title": "Compound interest",
-        "media": "media/compound-interest-square.mp4",
-        "href": "examples/compound-interest.html"
-      }
-    ]
-  },
   "prompts": [
-    "teach me how a heat pump moves heat uphill, for adults",
-    "how does a toilet flush refill itself? (for kids)",
-    "teach me photosynthesis",
-    "how does a steam engine work?",
-    "why did the Western Roman Empire fall?",
-    "how do writers build suspense?"
+    "show me inside a pin-tumbler lock",
+    "how does the heart pump blood? (for kids)",
+    "how does a nerve cell send a signal?",
+    "how does a vending machine know which snack to drop?",
+    "how does DNA copy itself?",
+    "teach me how a heat pump moves heat uphill, for adults"
   ],
   "faq": [
     {
@@ -83,12 +70,16 @@
       "aHtml": "<p>It's a small folder of instructions and tools that teaches an AI to do one job well. It isn't an app, and it doesn't run on its own. The AI reads it when you ask for something it covers.</p>"
     },
     {
+      "q": "What's new in version 2?",
+      "aHtml": "<p>Pictures of machines and living things now show the real parts in detail, so there is something true to find when you zoom in. It has new ready-made parts like screws, belts, chains, blood vessels, cell membranes and DNA.</p><p>Lessons can now print as posters and labelled diagrams too. Old lessons still work, and you can ask it to move one onto the new version.</p>"
+    },
+    {
       "q": "The AI isn't using it",
-      "aHtml": "<p>Restart the app. Then name the skill in your message, like “use /teachme to explain how a kettle works”, or start your message with <code class=\"inline\">/teachme</code>.</p><p>To check that it's installed in Claude Code, run <code class=\"inline\">ls ~/.claude/skills/teachme</code>. You should see SKILL.md, README.md, LICENSE, and the folders assets, references, scripts and templates.</p>"
+      "aHtml": "<p>Restart the app. Then name the skill in your message, like “use /teachme to explain how a diesel engine works”, or start your message with <code class=\"inline\">/teachme</code>.</p><p>To check that it's installed in Claude Code, run <code class=\"inline\">ls ~/.claude/skills/teachme</code>. You should see SKILL.md and the folders assets, references, scripts and templates.</p>"
     },
     {
       "q": "What topics work best?",
-      "aHtml": "<p>Anything with parts or steps works well: machines, money, living things, how governments work, language and space. It asks who is learning (a kid, a student or an adult) and fits the lesson to them. On topics where experts disagree, it says so.</p>"
+      "aHtml": "<p>Version 2 is at its best with machines and objects (an engine, a watch, a toilet) and living things (the heart, a plant, a nerve cell). It still works for money, government, language and space. It asks who is learning (a kid, a student or an adult) and fits the lesson to them. If a topic is too big for one lesson, it offers a short course instead.</p><p>Health lessons explain how things work and say they are not medical advice. They never give doses.</p>"
     },
     {
       "q": "How does it keep the facts right?",
@@ -96,11 +87,11 @@
     },
     {
       "q": "How long does a lesson take, and how many tokens?",
-      "aHtml": "<p>In test runs, a lesson took about 13 minutes on average and used about 140,000 to 170,000 tokens. That includes the research and the fact check.</p><p>On a Claude or ChatGPT plan, this counts toward your usage. On an API, you pay per token. Changes you ask for later in the same chat are much faster.</p>"
+      "aHtml": "<p>In test runs of the first version, a lesson took about 13 minutes on average and used about 140,000 to 170,000 tokens. That includes the research and the fact check.</p><p>On a Claude or ChatGPT plan, this counts toward your usage. On an API, you pay per token. Changes you ask for later in the same chat are much faster.</p>"
     },
     {
       "q": "Can I use it in a classroom?",
-      "aHtml": "<p>Yes. Lessons go full screen for a class display and print as a worksheet with an answer key. They work with a keyboard, screen readers, phones and reduced-motion settings. You can turn the guesses and the quiz on or off.</p>"
+      "aHtml": "<p>Yes. Lessons go full screen for a class display. They print as a worksheet with an answer key, a poster with numbered parts, a labelled diagram or a handout. You can also save a lesson as a video.</p><p>Lessons work with a keyboard, screen readers, phones and reduced-motion settings. You can turn the guesses and the quiz on or off.</p>"
     },
     {
       "q": "Is it safe to install?",
@@ -108,7 +99,7 @@
     },
     {
       "q": "Do I need to code?",
-      "aHtml": "<p>No. Ask in plain words. To change a lesson, say so in the same chat, like “make it for a 10-year-old” or “add a step about the thermostat”.</p>"
+      "aHtml": "<p>No. Ask in plain words. To change a lesson, say so in the same chat, like “make it for a 10-year-old” or “add a step about the glow plug”.</p>"
     }
   ],
   "license": "MIT",
@@ -117,5 +108,5 @@
     "chatgpt": null
   },
   "ogImage": "media/og.png",
-  "cardMedia": "media/kettle-wide.mp4"
+  "cardMedia": "media/diesel-engine-wide.mp4"
 }

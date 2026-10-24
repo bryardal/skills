@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parts gallery</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* A reference for builders, not a lesson: every v2 part in one picture, with the sizes that read well.
+   grep a part here before using it for the first time. Machines: screws, bolts, ticks, knob, slots, coil (split
+   round a rod), cable, shift (exploded lid), latheAx, gear + gearAt + meshAng, belt (a chain round sprockets), valve,
+   rail + carriage, pipeline, flap + chain, incline + force. Living: alveoli (air sacs with capillaries), enzyme with a token in its pocket, helix with a
+   base sequence and letters, legend with colour swatches.
+   Effects: flame, steam, vessel + waterSurface, stream, beam + pool, sparks. Living: tree + branch, tube, helix,
+   molecule, membrane + channel inside a front-view inset, heart (an organ with .pt and .path), ribbon, skeletal. */
+
+const pgK = 1;
+function scene(st, m) {
+  let s = '';
+  // ---- an instrument on a base plate: the detail pass in practice ----
+  s += ground(40, 40, 0, 46, 42);
+  s += box(10, 10, 0, 70, 70, 6, MAT.steel, tone);
+  s += screws([[70, 14, 3], [70, 66, 3]], 'x', 1.2);
+  s += screws([[14, 14, 6], [66, 14, 6], [14, 66, 6], [66, 66, 6]], 'z', 1.3);
+  s += box(66, 20, 6, 70, 60, 8, MAT.whitePlastic, tone);                       // a ruler strip
+  s += ticks([70, 21, 8], [70, 59, 8], 38, 1.2, [0, 0, -1]);                    // ticks hang from its edge
+  s += slots('x', [70, 40, 3], 1.4, 3.5, 8, { gap: 3 });                        // closed vent slots
+  // a spring wrapped round its rod: back half, rod, front half
+  const pgC = coil([40, 40, 6], [40, 40, 40 - st.press * 12], 5, 6, .8, MAT.steel, { split: true });
+  s += pgC.back + rod([40, 40, 6], [40, 40, 46 - st.press * 12], 2, MAT.brass, tone) + pgC.front;
+  s += bolts([40, 40, 46 - st.press * 12], 'z', 5, 6, .8);
+  // a housing with a knob, and an exploded lid lifted by shift()
+  s += box(50, 22, 6, 70, 38, 34, MAT.whitePlastic, tone);
+  s += act('knob', knob([70, 30, 22], 'x', 4, 4, MAT.blackPlastic, { ang: 30 + st.turn * 270 }));
+  s += shift(mul3([0, 0, 1], st.apart * 14), box(49, 21, 34, 71, 39, 37, MAT.steel, tone) + screws([[52, 24, 37], [68, 36, 37]], 'z', .9));
+  s += cable([60, 30, 34], [16, 66, 6], { sag: 8 });
+  // ---- living shapes ----
+  s += branch(tree([18, 96, 0], [0, 0, 1], { len: 26, r: 2.6, levels: 4, seed: 4 }), MAT.leaf);
+  s += helix([96, -6, 4], [96, -6, 60], { r: 6, turns: 2.4, offset: 150, seq: 'ATGCGTACGATTGCA', letters: true });
+  s += tube([[112, 20, 0], [116, 30, 10], [106, 44, 20], [110, 56, 5]], 2.5, '#d9534f', { r1: 1.2 });
+  s += molecule([{ el: 'O', at: [0, 0, 0] }, { el: 'H', at: [.76, 0, .59] }, { el: 'H', at: [-.76, 0, .59] }],
+    [[0, 1], [0, 2]], { at: [100, 70, 34], scale: 7, letters: true });
+  // a membrane with two channels, in a front-view magnifier bubble
+  const pgF = (u, v) => [0, FAR[1] - u, FAR[2] + v];
+  const pgI = { at: [118, 86, 52], r: 24, k: 3, view: 'front', label: 'membrane and channels' };
+  s += inset(pgI, () => fill(pd([pgF(-9, 0), pgF(9, 0), pgF(9, 9), pgF(-9, 9)]), '#eef6fb') +
+    membrane([pgF(-9, 0), pgF(9, 0)], { thick: 3.4, gaps: [{ at: .33, w: 3.6 }, { at: .67, w: 3.6 }] }) +
+    channel(pgF(-3, 0), [0, 0, 1], { h: 4.6, w: 1.6, open: st.open, m: '#f0a35e' }) +
+    channel(pgF(3, 0), [0, 0, 1], { h: 4.6, w: 1.6, open: 0, plug: true, m: '#9d7fe0' }));
+  // ---- more machine parts, on a second board in front ----
+  s += box(0, -100, 0, 80, -20, 3, MAT.steel, tone);
+  s += rail([4, -96, 3], 'x', 50, { ticks: 5 });
+  s += carriage([16 + st.press * 26, -96, 5.5], 'x', 12, 9, 5, MAT.blackPlastic);
+  s += latheAx([30, -40, 14], 'y', [[0, 0], [9, 0], [9, 1], [10, 1.5], [10, 16], [9, 16.5], [9, 17.5], [0, 17.5]], MAT.copper);
+  s += pipeline([[8, -24, 3.5], [8, -24, 30], [40, -24, 30], [40, -80, 30], [64, -80, 30]], 2.2, MAT.steel, { bands: [0.6] });
+  s += valve([40, -52, 30], 'y', 2.2, st.press, MAT.brass);
+  const pgG = [70, -50, 22], pgA = st.t * 0.8, pgPhi = 0.3;
+  s += gear(gearAt(pgG, 'x', 12, 6, pgPhi), 'x', 6, 12, meshAng(pgA, 24, 12, pgPhi), MAT.steel, { thick: 3 });
+  s += gear(pgG, 'x', 12, 24, pgA, MAT.brass, { thick: 3 });
+  // a chain round two sprockets: t follows the driving wheel (angle x radius), so links and teeth agree
+  const pgS1 = [76, -30, 10], pgS2 = [76, -6, 8];
+  s += gear(pgS1, 'x', 6, 18, pgA, MAT.steel, { thick: 1.4 }) + gear(pgS2, 'x', 3, 9, pgA * 2, MAT.steel, { thick: 1.4 });
+  s += belt([pgS1, pgS2], [6.4, 3.4], 'x', { chain: true, t: pgA * 6, pitch: 1.2 });
+  // ---- effects, on a third board ----
+  s += box(-110, -100, 0, -20, -20, 3, MAT.wood, tone);
+  s += pool([-90, -30, 3], 14, 14, 1);
+  s += beam([-90, -30, 40], [-90, -30, 3.2], 4, 12, 1);
+  s += rod([-90, -30, 3], [-90, -30, 40], 0.8, MAT.steel, tone);
+  s += latheAx([-90, -30, 39], 'z', [[4, 0], [6, 3], [6, 6], [2, 8]], MAT.blackPlastic);
+  const pgV = vessel([-60, -60, 3], 9, 18, .6, WATER, { glass: true });
+  s += pgV.back + pgV.liquid + waterSurface([-60, -60, 3 + 18 * .6], 8.6, 8.6, st.t) + pgV.front;
+  s += steam([-60, -60, 22], 1, st.t, { rise: 20, r: 2.6 });
+  s += stream([[-60, -60, 46], [-60, -60, 14]], 1.4, 1, st.t);
+  s += cyl(-30, -30, 3, 18, 3, MAT.paper, tone) + flame([-30, -30, 18.5], 3, 10, 1, st.t);
+  s += cyl(-30, -85, 3, 16, 1.8, MAT.steel, tone) + flame([-30, -85, 16.3], 3.4, 13, 1, st.t, { blue: 1 });
+  s += sparks([-95, -85, 4], st.t, 1);
+  // ---- an organ, a protein ribbon and a formula, flat to the viewer, to the left ----
+  const pgH = heart([-40, 110, 30], 50, { beat: st.press });
+  s += pgH + flow(pgH.path.leftSide, 'water', 1, st.t, 6, .3, 1.2) + tag(pgH.pt.leftVentricle, 24, 14, 'Left ventricle');
+  s += ribbon([[-10, 150, 70], [-12, 160, 80], [-14, 170, 66], [-16, 180, 80], [-18, 190, 66], [-20, 200, 76]], { helices: [[0.05, 0.5]], sheets: [[0.6, 0.95]] });
+  s += skeletal([{ el: 'C', xy: [0, 1] }, { el: 'C', xy: [.87, .5] }, { el: 'C', xy: [.87, -.5] }, { el: 'C', xy: [0, -1] }, { el: 'C', xy: [-.87, -.5] }, { el: 'C', xy: [-.87, .5] }, { el: 'OH', xy: [0, 2] }],
+    [[0, 1, 2], [1, 2], [2, 3, 2], [3, 4], [4, 5, 2], [5, 0], [0, 6]], { at: [-20, 170, 30], scale: 6 });
+  // ---- forces on a slope, a hinged flap on a chain, an enzyme, behind the instrument ----
+  const pgR = incline([-10, 120, 0], 50, 20, 15 + st.press * 15, MAT.wood);
+  const pgB = pgR.pt(26, 4);
+  s += pgR + ball(pgB, 4, MAT.steel);
+  s += force(pgB, [0, 0, -1], { scale: 16 }) + force(pgB, pgR.up, { scale: 10, col: '#2a9d5c' });
+  s += flap([130, -40, 0], [130, -24, 0], [-12, 0, 0], st.open * 60, MAT.rubber) + chain([124, -32, 24], [124, -32, 2]);
+  s += alveoli([-90, 60, 30], 40, { breath: st.press });
+  const pgE = enzyme([150, 40, 20], 22, { pocket: 30, open: st.open });
+  s += pgE + token(pgE.pt.pocket, 'sugar', 2) + legend([['sugar', 'Sugar'], ['#f2c14e', 'A'], [MAT.wood, 'Wood']]);
+  s += tag([40, 40, 40 - st.press * 12], 18, -22, 'Spring');
+  s += tag([70, 30, 22], 22, 10, 'Knob');
+  return s;
+}
+
+mountLesson({
+  title: 'Parts gallery',
+  kind: 'machine',
+  level: 'adult',
+  autoZoom: true,
+  palette: MAT.steel,
+  state: { t: 0, press: 0, turn: 0, apart: 0, open: 1 },
+  scene,
+  intro: 'A reference for lesson builders: every v2 drawing part in one picture. It is not a lesson.',
+  parts: { 'Spring': 'coil() with split: true, drawn round a rod.', 'Knob': 'knob() with grip ridges and a pointer.', 'Left ventricle': 'heart() gives named points like this one.' },
+  steps: [
+    { title: 'Press the spring', lit: ['Spring'], do: { label: 'Press', part: 'knob', at: [70, 30, 22] }, say: 'The coil squashes with its rod.', run(st, ui) { ui.tween({ press: 1, turn: 1 }, 1.2); } },
+    { title: 'Explode the lid', lit: ['Knob'], drag: { label: 'Drag to lift the lid', secs: 2 }, say: 'shift() lifts the lid straight off its housing.', run(st, ui) { ui.tween({ apart: 1, open: 0 }, 2); } },
+  ],
+  idea: 'Reference only.',
+  simplified: ['Not a lesson.'],
+  check: [{ q: 'Which part draws a spring?', choices: ['coil', 'tube', 'tree'], answer: 0, why: 'coil() draws a spring; split it to wrap a rod.' }],
+  sources: [],
+  credit: false,
+});
+</script>
+</body>
+</html>

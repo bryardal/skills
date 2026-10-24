@@ -151,6 +151,7 @@ function seObserve(st){
 
 mountLesson({
   title: 'How does a steam engine work?',
+  kind: 'machine',
   level: 'adult',
   guess: false,
   palette: SE_GREEN,
@@ -184,7 +185,7 @@ mountLesson({
       do: { label: 'Open the throttle', part: 'throttle', at: [40, 56, 48], hint: 'Turn the throttle wheel to let steam into the engine.' },
       say: 'The throttle lets steam from the boiler into the steam chest on top of the cylinder. There, the slide valve sends it into one end of the cylinder. The steam pushes the piston, and the engine starts to turn.',
       run(st, ui){ ui.tween({ thr: .95, speed: SE_SET, gov: SE_SET - .15 }, 2.8); } },
-    { title: 'Push, then push back', lit: ['Slide valve', 'Piston', 'Eccentric'], zoom: { at: [40, SE_SEC, 29], k: 2.3 },
+    { title: 'Push, then push back', lit: ['Slide valve', 'Piston', 'Eccentric'], zoom: 'auto',
       drag: { label: 'Drag to turn the engine slowly through one turn', secs: 5 },
       guess: { q: 'The slide valve must swap ends at exactly the right moment, every stroke. What moves it?',
         choices: ['The engine driver, by hand', 'The governor', 'An eccentric on the crankshaft'], answer: 2,

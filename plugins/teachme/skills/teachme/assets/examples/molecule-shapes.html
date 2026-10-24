@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why is a water molecule bent?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: Why is a water molecule bent? Level: student. Facts: facts.md.
+   Real process (facts.md): electron regions around the central atom repel (1) and settle in the lowest-energy
+   arrangement, four at the corners of a tetrahedron, 109.5 degrees (2, 3, 4) -> methane: four bonding pairs,
+   tetrahedral, 109.5 (5, 6) -> ammonia: one lone pair, trigonal pyramid, about 107 (7, 8) -> water: two lone pairs,
+   bent, 104.5 (9, 10, 11) because lone pairs repel more (13, 14, 15, 16); the shape name counts atoms only (17).
+   Parts list: central atom (C, N or O), hydrogen atoms, bonds, electron pairs (bonding and lone), the bond angle.
+   Sandbox facts: 0, 1 or 2 lone pairs give tetrahedral 109.5, trigonal pyramid about 107, bent 104.5 (16). */
+
+// ---- one small model: four directions from a tetrahedron; lone pairs push the bonds together ----
+const vsS = 1 / Math.sqrt(2);
+const vsBase = [[1, 0, vsS], [-1, 0, vsS], [0, 1, -vsS], [0, -1, -vsS]].map(norm); // two up, two down
+const vsTarget = [109.5, 107, 104.5];                                                  // facts 3, 8, 11
+const vsLen = 24;
+const vsAng = (a, b) => (Math.acos(clamp(dot(a, b), -1, 1)) * 180) / Math.PI;
+// lone pairs sit at the top corners (index 1 first, then 0); bonded directions are pulled away from them until the
+// angle between the two lower bonds is the measured one
+function vsDirs(lp, sq) {
+  const lps = lp >= 2 ? [0, 1] : lp >= 1 ? [1] : [],
+    away = lps.length ? norm(lps.reduce((acc, i) => add(acc, vsBase[i]), [0, 0, 0])) : [0, 0, 1];
+  const pull = s => vsBase.map((d, i) => (lps.includes(i) ? d : norm(sub(d, mul3(away, s)))));
+  let lo = 0, hi = 1.2, want = vsTarget[Math.min(2, Math.round(lp))];
+  for (let k = 0; k < 40; k++) { const mid = (lo + hi) / 2; vsAng(pull(mid)[2], pull(mid)[3]) > want ? (lo = mid) : (hi = mid); }
+  return { dirs: pull(lo * sq), lps };
+}
+const vsRot = (d, a) => [d[0] * Math.cos(a) - d[1] * Math.sin(a), d[0] * Math.sin(a) + d[1] * Math.cos(a), d[2]];
+// before the pairs spread out: all four squashed flat around the atom (step 1 starts here)
+const vsFlat = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0]];
+function vsGeom(st) {
+  const g = vsDirs(st.lp, st.sq);
+  const dirs = g.dirs.map((d, i) => vsRot(norm(lerp3(vsFlat[i], d, st.spread)), st.spin));
+  return { dirs, lps: g.lps, angle: vsAng(dirs[2], dirs[3]) };
+}
+const vsEl = st => (st.lp >= 1.5 ? ['O', 'Oxygen'] : st.lp >= 0.5 ? ['N', 'Nitrogen'] : ['C', 'Carbon']);
+
+// ---- the picture ----
+function scene(st, m) {
+  const g = vsGeom(st), [el] = vsEl(st);
+  let s = ground(0, 0, -24, 12, 12);
+  const parts = [];
+  // electron pairs: soft clouds; a lone pair keeps its cloud with no atom at the end
+  g.dirs.forEach((d, i) => {
+    const lone = g.lps.includes(i), cloud = add([0, 0, 0], mul3(d, vsLen * (lone ? 0.55 : 0.5)));
+    const show = lone ? 1 : st.clouds;
+    if (show > 0.02)
+      parts.push({ at: cloud, svg: fade((lone ? 0.55 : 0.32) * show, ball(cloud, lone ? 6.4 : 5.2, lone ? '#b9a2f2' : '#cfe0f7', 0.6)) +
+        fade(show, ball(add(cloud, mul3(_perp(d), 1.8)), 1, '#5a3fb0', 0.4) + ball(add(cloud, mul3(_perp(d), -1.8)), 1, '#5a3fb0', 0.4)) });
+    if (!lone && st.atoms > 0.02) {
+      const end = mul3(d, vsLen);
+      parts.push({ at: mul3(d, vsLen * 0.5), svg: fade(st.atoms, rod(mul3(d, 6.5), mul3(d, vsLen - 3.8), 1.3, '#d9d4cc', tone, 0.8)) }); // the stick starts at the atom's surface
+      parts.push({ at: end, svg: act(i === 1 ? 'top' : 'h' + i, fade(st.atoms, ball(end, 4.2, '#f4f4f2', 0.9) +
+        `<text x="${f(P(...end)[0])}" y="${f(P(...end)[1] + 1.6)}" font-size="5.6" text-anchor="middle" font-family="${SANS}" font-weight="700" fill="#333">H</text>`)) });
+    }
+  });
+  const col = { C: '#5b5f66', N: '#3f6fd8', O: '#e2483d' }[el];
+  parts.push({ at: [0.01, 0.01, 0.01], svg: act('center', ball([0, 0, 0], 7, col, 1.1) +
+    `<text x="${f(P(0, 0, 0)[0])}" y="${f(P(0, 0, 0)[1] + 2.4)}" font-size="8.5" text-anchor="middle" font-family="${SANS}" font-weight="750" fill="#fff">${el}</text>`) });
+  s += byDepth(parts);
+  // the bond angle between the two lower bonds, as an arc with its size
+  if (st.arc > 0.02) {
+    const a = g.dirs[2], b = g.dirs[3], pts = [];
+    for (let k = 0; k <= 16; k++) pts.push(mul3(norm(lerp3(a, b, k / 16)), 13));
+    s += fade(st.arc, curve(pts, '#c2410c', 1.6) + curve([[0, 0, 0], mul3(a, 13)], '#c2410c', 0.8, { dash: 2 }) + curve([[0, 0, 0], mul3(b, 13)], '#c2410c', 0.8, { dash: 2 }));
+  }
+  const mid = mul3(norm(add(g.dirs[2], g.dirs[3])), 13);
+  s += tag([0, 0, 0], -26, -18, 'Central atom');
+  s += tag(mul3(g.dirs[3], vsLen), 22, 14, 'Hydrogen');
+  if (st.arc > 0.5) s += tag(mid, 22, 22, 'Bond angle');
+  const lp0 = g.lps.length ? mul3(g.dirs[g.lps[0]], vsLen * 0.55) : mul3(g.dirs[1], vsLen * 0.5);
+  s += tag(lp0, -24, -20, g.lps.length ? 'Lone pair' : 'Electron pair');
+  return s;
+}
+
+// ---- sandbox ----
+function vsTick(st, dt) {
+  st.lp += clamp(st.lpWant - st.lp, -dt * 2.5, dt * 2.5);
+}
+function vsObserve(st) {
+  const g = vsGeom(st), n = Math.round(st.lp), [, name] = vsEl(st);
+  const shape = ['tetrahedral', 'a trigonal pyramid', 'bent'][n];
+  return `${name} with ${n} lone pair${n === 1 ? '' : 's'}: the shape is ${shape}, and the angle is about ${g.angle.toFixed(1)} degrees. Drag the picture to turn it.`;
+}
+
+mountLesson({
+  title: 'Why is a water molecule bent?',
+  kind: 'idea',
+  level: 'student',
+  turn: { auto: true },
+  scale: 'Not to scale: atoms and bonds are balls and sticks, and electron pairs are fuzzy clouds.',
+  guess: true,
+  autoZoom: false,
+  reveal: true,
+  palette: MAT.steel,
+  state: { t: 0, spread: 0, clouds: 1, atoms: 0, lp: 0, lpWant: 0, sq: 0, arc: 0, spin: 0 },
+  stats: st => [{ label: 'Angle between the two lower bonds', value: st.arc > 0.5 ? vsGeom(st).angle.toFixed(1) + '°' : '-' }],
+  scene,
+  intro: 'Written as H-O-H, water can look straight, and flat drawings make molecules look flat. Real molecules are 3D. This one turns: drag across the picture to look at it from any side.',
+  parts: {
+    'Central atom': 'The atom in the middle. Its outer electrons sit in four regions around it.',
+    'Electron pair': 'A pair of electrons around the central atom. It can be shared with a hydrogen atom in a bond.',
+    'Lone pair': 'A pair of electrons with no atom at the end. It still takes up room, and it pushes harder than a bond.',
+    'Hydrogen': 'A small atom joined to the central atom by a bond.',
+    'Bond angle': 'The angle between two bonds, measured at the central atom.',
+  },
+  steps: [
+    { chapter: 'Pairs push apart', title: 'Pairs push apart', lit: ['Electron pair'],
+      do: { label: 'Press the centre atom', part: 'center', at: [0, 0, 0], hint: 'Press the atom in the middle.' },
+      say: 'Around this atom are four pairs of electrons. Electrons push each other away, so the four pairs spread out until they are as far apart as they can get.',
+      run(st, ui) { ui.tween({ spread: 1 }, 2); } },
+    { title: 'Four corners', lit: ['Bond angle'],
+      drag: { label: 'Drag to add hydrogen atoms', secs: 2.5 },
+      say: 'Four pairs point to the corners of a tetrahedron, a shape with four triangle faces. Put a hydrogen atom on each pair and you get methane. Every angle between two bonds is 109.5 degrees.',
+      run(st, ui) { ui.tween({ atoms: 1, arc: 1, clouds: 0.4 }, 2.5); } },
+    { chapter: 'Lone pairs', title: 'One lone pair', lit: ['Lone pair'],
+      guess: { q: 'Now the centre atom is nitrogen. One of its four pairs has no hydrogen on it. What happens to the angle between the other bonds?', choices: ['It stays at 109.5 degrees', 'It gets a little smaller', 'It opens up much wider'], answer: 1,
+        why: 'A lone pair pushes harder than a bond, so it squeezes the three bonds together. In ammonia the angle closes to about 107 degrees.' },
+      do: { label: 'Remove the top hydrogen', part: 'top', at: mul3(vsBase[1], vsLen), hint: 'Press the hydrogen at the top.' },
+      say: 'This is ammonia. The top pair has no atom: it is a lone pair. It pushes harder than a bond, so the three bonds close up to about 107 degrees. The atoms form a pyramid with three legs.',
+      run(st, ui) { ui.tween({ lp: 1, lpWant: 1 }, 0.6, () => ui.tween({ sq: 1 }, 1.4)); } },
+    { title: 'Two lone pairs', lit: ['Bond angle'],
+      guess: { q: 'Water has two lone pairs and two hydrogen atoms. What shape does it have?', choices: ['A straight line, H-O-H', 'Bent, like a wide V', 'Flat and square'], answer: 1,
+        why: 'The four pairs still point to a tetrahedron, but only two corners hold atoms. So the molecule is bent, with an angle of 104.5 degrees.' },
+      drag: { label: 'Drag to make water', secs: 2.5 },
+      say: 'This is water. Two lone pairs sit on top and push even harder, so the two bonds close to 104.5 degrees. The shape is named by the atoms only, so water is bent.',
+      run(st, ui) { ui.tween({ lp: 2, lpWant: 2 }, 2.5); } },
+    { title: 'See the bend', lit: ['Hydrogen'],
+      drag: { label: 'Drag to turn the molecule side on', secs: 3 },
+      say: 'Turn water side on and the bend is easy to see: a wide V, not a straight line. Water is bent because its lone pairs take up room, even though you cannot see them in a drawing of H-O-H.',
+      run(st, ui) { ui.tween({ spin: Math.PI / 2, clouds: 0.25 }, 3); } },
+  ],
+  tryit: {
+    say: 'Choose how many lone pairs the centre atom has. Watch the angle, then drag the picture to turn the molecule. The angles are measured values from textbooks; the picture does not work them out.',
+    setup(st) { Object.assign(st, { spread: 1, atoms: 1, arc: 1, clouds: 0.4, sq: 1, spin: 0, lp: 0, lpWant: 0 }); },
+    tick: vsTick,
+    observe: vsObserve,
+    controls: [
+      { type: 'button', label: 'No lone pairs', onClick(st) { st.lpWant = 0; } },
+      { type: 'button', label: 'One lone pair', onClick(st) { st.lpWant = 1; } },
+      { type: 'button', label: 'Two lone pairs', onClick(st) { st.lpWant = 2; } },
+    ],
+  },
+  idea: 'Four electron pairs point to the corners of a tetrahedron. Two are lone pairs, so water is bent, and lone pairs push harder, so its angle is 104.5 degrees.',
+  simplified: [
+    'This is the VSEPR model (valence shell electron pair repulsion). It is a simple way to predict shapes, and it leaves some things out.',
+    'Electron pairs are drawn as small clouds with two dots. This is only a picture: real electrons are not dots.',
+    'Bond lengths and atom sizes are not to scale.',
+    'Some sources give the ammonia angle as 106.7 or 106.8 degrees. This lesson rounds it to about 107.',
+  ],
+  check: [
+    { q: 'Which has the smallest angle between two bonds?', choices: ['Methane', 'Ammonia', 'Water'], answer: 2,
+      why: 'Water has two lone pairs, and lone pairs push harder than bonds, so its angle is the smallest: 104.5 degrees.' },
+    { q: 'Why is ammonia called a pyramid and not a tetrahedron?', choices: ['Its lone pair is not counted in the shape name', 'It has five atoms', 'Its bonds are longer'], answer: 0,
+      why: 'The electron pairs still point to a tetrahedron, but the shape name counts only atoms. With a lone pair on top, the atoms make a pyramid.' },
+    { q: 'A friend draws water as H-O-H in a straight line. What is wrong?', choices: ['Nothing, water is straight', 'Water is bent, at about 104.5 degrees', 'Water is bent at 90 degrees'], answer: 1,
+      why: 'Water is bent, at 104.5 degrees, a bit more than a right angle. H-O-H written in a line can look straight, but it is not.' },
+  ],
+  sources: [
+    { title: 'OpenStax Chemistry 2e, 7.6 Molecular Structure and Polarity', url: 'https://openstax.org/books/chemistry-2e/pages/7-6-molecular-structure-and-polarity', note: 'VSEPR, tetrahedral regions, water 104.5 degrees, shape counts atoms, lone pairs repel more' },
+    { title: 'LibreTexts, Averill, General Chemistry 9.2: VSEPR, Molecular Geometry', url: 'https://chem.libretexts.org/Bookshelves/General_Chemistry/Book%3A_General_Chemistry%3A_Principles_Patterns_and_Applications_(Averill)/09%3A_Molecular_Geometry_and_Covalent_Bonding_Models/9.02%3A_VSEPR_-_Molecular_Geometry', note: 'Four electron groups, 109.5 degrees, bent water, lone pairs take more space' },
+    { title: 'LibreTexts, Hutchinson, Concept Development Studies 7.5', url: 'https://chem.libretexts.org/Bookshelves/General_Chemistry/Concept_Development_Studies_in_Chemistry_(Hutchinson)/7%3A_Molecular_Geometry_and_Electron_Domain_Theory/Section_5%3A_Observation_3%3A_Distortions_from_Expected_Geometries', note: 'Lone pairs reduce bond angles' },
+    { title: 'University of Texas at Austin, McCord: VSEPR', url: 'https://mccord.cm.utexas.edu/courses/vsepr/tetrahedral.php', note: 'Ammonia about 107, water 104.5' },
+    { title: 'University of Wisconsin, Chem 109', url: 'https://wisc.pb.unizin.org/chem109fall2024/?p=214', note: 'Water 104.5 degrees, more than a right angle' },
+  ],
+});
+</script>
+</body>
+</html>

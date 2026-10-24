@@ -20,6 +20,6 @@ export const skills = {
     "name": "/teachme",
     "tagline": "Ask about anything. Get a lesson you can press, drag and play with.",
     "url": "https://skills.siaccelerator.co/teachme",
-    "firstPrompt": "teach me how a heat pump moves heat uphill, for adults"
+    "firstPrompt": "show me inside a pin-tumbler lock"
   }
 };

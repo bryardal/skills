@@ -2,6 +2,22 @@
 
 You don't need this to build a lesson: `mountLesson` builds the page and `scripts/check.py` runs the checks. Read it only when changing the engine or checking by hand without Playwright.
 
+## Printing (built in)
+
+Options, "Print or save as PDF" has four buttons. Worksheet (also what plain printing gives): the picture, the steps,
+the parts, the quiz with blanks and an answer key. Poster: one A4 or Letter page with the name, the big idea, the
+richest picture with numbered pins, every part in one line and the steps. Labelled diagram: one landscape page with
+the picture, a parts table and a strip of up to six key steps with their parts lit. Handout: an overview page, every
+step as a large still with its words and readouts (six to a page), then the quiz, what's simplified and the sources.
+Pictures are drawn fresh for the page (the engine replays the steps off screen), so the live lesson is untouched.
+`scripts/print.py` makes the same PDFs from the command line; `?print=poster&paper=letter` opens a lesson ready to
+print. A lesson shown inside a preview panel or another page often can't open the print dialog (the frame blocks
+it without a word); the buttons notice and offer "Open in a new tab" or "Save the sheet" (a page of just that sheet
+that opens the print dialog by itself), so printing works wherever the lesson is opened. When handing a lesson over,
+say that printing works best with the file opened in a browser. Inside a published Claude artifact the page can't
+download by itself: saving (the video, a sheet) goes through the viewer's save prompt when the artifact is published
+with the `downloads` capability, and falls back to a plain download link everywhere else.
+
 ## 3c. The lesson page (built in; don't rebuild it)
 
 The page is a lesson player with one reading order on every screen: **the picture, the words, then what you

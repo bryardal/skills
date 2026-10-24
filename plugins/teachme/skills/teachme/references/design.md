@@ -26,7 +26,9 @@ Read before writing the steps. Contents: design the lesson, make it hands-on, wr
     what it means.
 - **`parts`**: one or two plain sentences for every labelled part (and for anything the colours stand for, such as
   "Gold coins"). These are facts too, so they need sources.
-- **`lit`**: for each step, the 1–2 labels of the parts doing the work right now. Use 3–6 labels in total.
+- **`lit`**: for each step, the 1–2 labels of the parts doing the work right now. Keep 3–6 labels visible at once;
+  with `reveal: true` a longer lesson can name more in total (a heart or a cell may need 10–14), because each label
+  appears only when its step lights it.
 - **Guesses** (`guess`) on the most surprising steps, about one in three or four: a question, 3 answers, one right. Use real mistaken beliefs
   from `facts.md` as the wrong answers. `why` explains the right answer in one or two sentences and shows after the
   learner answers, right or wrong, so it must make sense on its own.
@@ -64,10 +66,15 @@ Mix step types so the lesson feels like using the thing:
 - **`tryit`** (always, unless there is genuinely nothing to vary): a sandbox after the last step with 1–3 controls
   (toggles, sliders, buttons) on the same picture and a live line (`observe`) that says what is happening in plain
   words. Pick controls that test the big idea and its most interesting what-if (lid open or closed, a higher rate).
-  The sandbox must follow sourced facts. It may speed up time or rescale things if `simplified` says so.
+  The sandbox must follow sourced facts. It may speed up time or rescale things if `simplified` says so. A control
+  used out of order answers sensibly: it runs the missing step first, or says why not with `ui.note(...)` ("Fill the
+  tank first"). Every number it shows comes from the lesson's one model (machines.md, section 1).
   **Illustrative models:** when a sandbox needs a constant no source gives (how fast suspense rises, the size of a
   shift in demand), keep the direction of every effect sourced, pick a round illustrative number, and say in
   `simplified` that the sizes are illustrative.
+- **Comparisons are labelled.** When a step compares a living process to a machine ("a channel works like a gate"),
+  the caption says it is a comparison, the real structure stays in view, and `simplified` says where the comparison
+  stops working (living.md, section 2).
 - **Debated topics** (history's causes, open science, schools of economics): never present one school's view as
   fact. Teach what is agreed in the steps, and put the main explanations side by side on one step with
   `views: [{who, says}]` (2-4 views, each sourced). The quiz asks only what is agreed, or "which view says...".
@@ -79,7 +86,8 @@ These follow plain-language editing. If a `plain-language-editor` skill is insta
 - **Simpler words, same ideas.** Aim for about Grade 3–5 for kids, Grade 5–7 for students and Grade 8 for adults.
   Keep a needed technical term (convection, compound interest), but explain it in plain words the first time.
 - **Short sentences.** About 8–15 words, one main idea each. Join closely linked ideas with "and", "so", "but" or
-  "because" so the text doesn't sound choppy.
+  "because" so the text doesn't sound choppy. Use the natural word pairs people say ("heart and lungs", "in and out",
+  "push and pull"), not reversed or invented ones.
 - **Common words:** use, not utilize. About, not approximately. Show, not demonstrate. Get, not obtain.
 - **Active voice and real actors:** "The disc snaps", not "the switch is triggered".
 - **One word for one thing.** If it is a "channel" in step 3, it is a "channel" in the label, the parts, the quiz and

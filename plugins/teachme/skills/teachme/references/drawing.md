@@ -1,19 +1,26 @@
 # Drawing the picture
 
-Read before drawing. Contents: pick the picture, the quality bar, drawing rules. The helper functions are in api.md.
+Read before drawing. Contents: pick the picture, the quality bar, the detail pass, drawing rules. The helper
+functions are in api.md. Two subject guides go deeper: machines.md (devices, objects, invented machines for
+ideas) and living.md (bodies, cells, plants, molecules, health). Read the one that fits the topic.
 
 ## 3. Pick the picture
 
-- **A physical thing** (machine, device, appliance, building system): model the real object, see-through where
-  the working parts are hidden (glass walls, a cutaway window, a clear tube). Follow its real proportions.
+- **A physical thing** (machine, device, appliance, building system): model the real object, built from its real
+  parts, see-through where the working parts are hidden (glass walls, a cutaway window, a clear tube). Follow its
+  real proportions and its real process (machines.md).
 - **A physical thing stands on the white page**, like a product photo: no table or board under it, just its soft
   `ground` shadow. Use a board only when it carries meaning (the base of a chart, a desk in a scene).
 - **An idea** (money, data, a process, a law of nature): build a small scene on a board where something you can see
   stands for the idea and matches it exactly: tower height for an amount (`stack`), tokens moving along arrows for a
   flow (`along`, `arrow3`), boxes or cylinders for stages, a screen or sign for a graph or rule (`onFace`). Heights
   and numbers must be to scale, and the intro says what the pieces stand for.
-- **Living things**: soft natural shapes, never boxes: `blob` for cells and organs, `lathe` for chambers, bodies and
-  trunks, tapering `rod`s for stems and vessels, folded leaves. Show the inside with a cut or see-through shell.
+- **Living things**: the real structure, in soft natural shapes, never boxes: `blob` for cells and organs, `lathe`
+  for chambers, bodies and trunks, `tube` for vessels, guts and stems, `tree` + `branch` for anything that branches,
+  `membrane` and `channel` for a cell's edge up close, `helix` for DNA, `molecule` for small molecules. Show the
+  inside with a cut or see-through shell. Literal by default; a metaphor only when labelled as one (living.md).
+- **A mechanism you can't see** (software, an algorithm, a rule, a control loop): invent a real, well-made machine
+  whose working is the idea, one to one (machines.md, section 4), or use the patterns below.
 - **People**: `person` figures, simple and friendly, coloured by role, with a `bubble` for what they say or think.
   No detailed faces or real people.
 - **Mixed scales** (body to cell, wire to electron, city to street): draw the big thing, and the small world inside
@@ -33,8 +40,12 @@ what the pieces stand for, and list any made-up quantity in `simplified`.
 
 | The topic is... | Show it as | Parts to use |
 |---|---|---|
-| A machine, device or building system | The real object, cut open where it matters | `box cyl rod pipe wheel gauge vessel` |
-| A living process (organ, plant, body) | The organ or organism in cross-section, soft rounded shapes; chambers as see-through shells | `blob lathe vessel flow legend fade` |
+| A machine, device or building system | The real object, built from its real parts, cut open or exploded where it matters | `box cyl latheAx rod pipeline valve gear wheel gauge vessel rail carriage screws knob ticks slots coil cable shift` |
+| Fire, heat, water and light (a candle, a burner, a boiling pan, a lamp, a tap) | The real object with the effect itself drawn real: a flickering flame, rising steam, rippling water, a beam and its pool of light | `flame steam waterSurface stream beam pool sparks vessel` |
+| A technical or invisible mechanism (a cache, a queue, feedback, a threshold) | An invented machine whose working is the idea, one to one (machines.md, section 4) | `box rod coil knob wheel gauge flow` |
+| A living process (organ, plant, body) | The organ or organism in cross-section, soft rounded shapes; chambers as see-through shells. For the heart, brain, lungs and kidney use the ready-made organ and its `.pt` and `.path` | `heart brain lungs kidney blob lathe tube tree branch flow legend fade` |
+| Nerves, membranes and signals | The cell drawn whole, and an `inset` (view 'front') on the membrane or synapse with channels and moving ions | `tree branch tube membrane channel inset flow` (example: nerve-signal) |
+| DNA, proteins and molecules | The molecule from its structure record, with a legend for colours; the cell around it in an inset or beside it; a protein as a `ribbon`; a formula as `skeletal`. When the 3D shape is the idea, let the learner turn it (`turn: true`) | `helix molecule ribbon skeletal inset legend` |
 | Cells, germs and the immune system | The body part, and an `inset` bubble where the cells are big enough to see, as `cell bcell antibody virus bacterium` tokens | `inset blob token flow legend` |
 | Invisible particles (chemistry, electricity) | The real apparatus at true size, with particles as tokens far larger than life (or in an `inset`), a legend, and "far larger than real" in `simplified` | `flow legend TOKENS (ion+ ion-, custom draw) vessel inset` |
 | Light, sound and waves | The source and the path in `'front'` view; waves as `ripples`; sound with `playNote` and `sound: true` | `ripples curve glow playNote` |
@@ -108,8 +119,9 @@ These are finish, not decoration: if a touch hides the mechanism or adds clutter
   when the whole picture matters again. The learner can always zoom back out.
 - **Show the inside.** Hidden parts go behind glass, a cutaway window or a see-through panel on a visible face (the
   front `+x`, the left side `+y` or the top).
-- **Less is clearer.** Keep only the parts that matter to the big idea, plus enough to recognise the object. No
-  decoration, no extra props, no busy textures, no more than 6 labels.
+- **Real, not busy.** Build the subject from its real parts (the detail pass below), and nothing else: no
+  decoration, no extra props, no texture fill, no more than 6 labels. Clarity comes from lighting 1-3 parts per step,
+  not from leaving the object half built.
 - **True proportions and amounts.** Real shapes; in an idea scene, sizes exactly to scale.
 - **Labels:** one or two words in sentence case. Light only the ones that matter in this step (placement and `parts`
   rules: Drawing rules below).
@@ -120,6 +132,29 @@ These are finish, not decoration: if a touch hides the mechanism or adds clutter
 - **The stranger test.** For every step's screenshot, write one line saying what a stranger would think is happening
   with the caption hidden. If it doesn't match the caption, fix the drawing (zoom, cutaway, arrow, highlight, less
   clutter), not the caption.
+
+## 3c. The detail pass (machines and living things)
+
+A recognisable subject is what makes a learner trust the picture. Check it with two looks:
+- **At 1x:** one clear thing a stranger names at a glance.
+- **Zoomed in** (`check.py --step N --crop ...`, or the zoom buttons): every region still has something true to
+  find. A bare face or an empty corner is unfinished work. Machines: screws at the corners of plates, seams, bevels,
+  label plates, ruler ticks, bushings, connectors, knobs with grip (machines.md, section 2). Living things: veins,
+  folds, organelles, valves, branching that thins at every split (living.md, section 5).
+
+Detail scales with the learner (about 15-30 real parts for kids, 30-60 for students, 40-80+ for adults), and every
+detail is a real part with a job that ends on an edge. `check.py` notes a machine or living picture with very few
+shapes. Ideas (`kind: 'idea'`) keep their scenes simple.
+
+## 3d. Turning (turn: true)
+
+Turning helps only when the 3D shape itself is what the learner must understand: the angles of a molecule, the
+twist of DNA, a crystal, a skeleton. Keep the subject at the pivot (default [0, 0, 0]) and fill the picture with it.
+Build it from parts that look right from every side (api.md lists them); a flat card, graph, organ or formula stays
+facing the viewer as the rest turns. Ask a step to turn it with a `do` ("Turn the molecule to see the angle") so the
+learner discovers the control, and say in the intro that they can drag to turn it. Don't use turning for machines
+(their printed fronts and cutaways face one way) or for scenes with insets. The video and the printed sheets show
+the scene at the angle it has when they are made.
 
 ## Drawing rules
 
@@ -152,6 +187,10 @@ These are finish, not decoration: if a touch hides the mechanism or adds clutter
   small to read. Leave clear space on the board between objects.
 - Text on the object: `tx` (front), `txY` (side) or `txZ` (flat on the floor; `along` 'x' or '-y'), at least about 2
   units tall. Plain letters, numbers and simple punctuation only; emoji and symbols smear in the Sketch style.
+- Fine detail and living shapes: `screw(s)`, `bolts`, `ticks`, `knob`, `slots`, `coil`, `tube`, `cable`, `tree` +
+  `branch`, `membrane`, `channel`, `helix`, `molecule`, and `shift` for exploded views; round bodies on any axis
+  (`latheAx`), gears, valves, rails and bent pipes; the ready-made organs; effects (api.md, v2 parts). Before
+  using one for the first time, `grep` it in `nerve-signal.html` or `parts-gallery.html`.
 - Labels: `tag([x,y,z], dx, dy, 'Text')` lights up when the current step lists `'Text'` in `lit`. Point labels out
   into empty space. They must not cover each other, the action, moving parts or printed text at any step. Every label
   text matches a `parts` key exactly, so the label becomes a button that explains the part.

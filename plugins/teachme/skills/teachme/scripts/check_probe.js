@@ -139,7 +139,18 @@
                 ? 'the legend'
                 : top.closest('.zoombar,#stats')
                   ? 'the page controls'
-                  : 'another part of the drawing');
+                  : (() => {
+                      // name the culprit so the builder can find it: its pressable part, its label, or its shape and colour
+                      if (top.tagName.toLowerCase() === 'svg' || top.id === 'art')
+                        return 'nothing: the tap lands on empty space beside a thin part (move do.at onto a drawn shape, or put pad(p, r) inside its act())';
+                      const a = top.closest('[data-act]'),
+                        g = top.closest('[data-part]');
+                      if (a) return 'the pressable part "' + a.dataset.act + '"';
+                      if (g) return 'the shapes of "' + g.dataset.part + '"';
+                      const f = top.getAttribute('fill') || getComputedStyle(top).fill || '';
+                      return 'a ' + top.tagName.toLowerCase() + (f && f !== 'none' ? ' filled ' + f : '') +
+                        ' drawn after it (draw it before the part, or lower its opacity and add pointer-events:none)';
+                    })());
       clash.push(
         !art.querySelector('[data-act="' + CSS.escape(want) + '"]')
           ? 'the part to press ("' +

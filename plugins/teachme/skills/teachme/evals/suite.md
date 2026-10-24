@@ -31,6 +31,10 @@ whenever a user's topic breaks the skill in a new way.
 | 19-bread | Why does bread dough rise? | Cooking, microbiology | Student | Microbes inside an opaque food | 3.5 / 3 |
 | 20-trial | How does a criminal jury trial work? | Law | Adult | A process carried by speech | 3 / 3 |
 
+v2 stress test (24 Oct 2026, blind, picture / real detail): heart (kid) 3.5 / 3.5, bike gears 4.5 / 4, kidneys
+3.5 / 4, ibuprofen 3 / 3, candle 4 / 3.5, lungs and gas exchange 4 / 3.5, toilet cistern 4.5 / 4.5, knee-jerk reflex
+3.5 / 3.5, DNA copying 3.5 / 4, fridge 4 / 4. See `results/2026-10-24.md`.
+
 Picture scores from round 2 onward come from a blind reviewer (see README). Next round, add: chemistry of cooking
 (why onions brown), a music idea (why chords sound happy or sad), geography (why deserts form where they do),
 statistics (why averages mislead), a skill (how to tie a bowline knot), ethics (the trolley problem), computing

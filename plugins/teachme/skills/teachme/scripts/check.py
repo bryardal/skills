@@ -5,12 +5,16 @@
   - screen sizes from phone to monitor: no sideways scrolling, the main button visible
   - ONE contact sheet image of every step (+ sandbox and a phone view) to look at instead of many screenshots
   - NOTE lines: how much of the frame the drawing covers, steps that barely change the picture, steps with no lit
-    label, steps the learner only watches, captions over 50 words
+    label, steps the learner only watches, captions over 50 words, too few real parts for a machine or living
+    thing, a living lesson with no stated scale, a health topic with no notice
+  - audits: a lit name that matches no label, labels with no parts text or pointing at empty space, outline lines
+    that stop in mid-air, numbers in the lesson that facts.md doesn't contain, sizes that break the stated scale
 Prints only what needs attention, then "ALL OK" or the problems. Act on NOTE lines too: they predict low review scores.
 
   python3 check.py lesson.html                 # writes lesson.built.html and lesson.sheet.png next to it
   python3 check.py lesson.html --out OUT.html  # choose the built file
   python3 check.py lesson.html --step 3        # quick: only build and save a full-size screenshot of step 3 (~3 s)
+  python3 check.py lesson.html --step 3 --crop .4,.3,.3,.3   # a sharp close-up of part of step 3's picture
   python3 check.py lesson.html --video         # also record the video download and report its size and length
 
 Needs: pip install playwright pillow (and a Chromium: `playwright install chromium` if none is installed).
@@ -37,6 +41,7 @@ HERE = Path(__file__).resolve().parent
 # In-page scripts: PROBE reports what needs attention in the current view, DRIVE clicks through the whole lesson.
 PROBE = (HERE / "check_probe.js").read_text(encoding="utf-8").strip().rstrip(";")
 DRIVE = (HERE / "check_drive.js").read_text(encoding="utf-8").strip().rstrip(";")
+AUDIT = (HERE / "check_audit.js").read_text(encoding="utf-8").strip().rstrip(";")
 
 DESKTOP = {"width": 1280, "height": 800}
 SCREEN_SIZES = [(360, 740), (390, 844), (844, 390), (768, 1024), (1280, 800), (1920, 1080)]
@@ -58,6 +63,12 @@ LESSON_TEXT = r"""(() => {
       n: i + 1, title: s.title, act: !!(s.do || s.drag), do: !!s.do, guess: !!s.guess, words: w(s.say),
     })),
     text: JSON.stringify([c.intro, c.idea, (c.steps || []).map(s => [s.title, s.say, s.guess]), c.parts, c.check, c.simplified]),
+    kind: c.kind || '', scale: c.scale || '', notice: c.notice || '',
+    lit: [...new Set((c.steps || []).flatMap(s => s.lit || []))], parts: Object.keys(c.parts || {}),
+    words: JSON.stringify([c.intro, c.idea, (c.steps || []).map(s => [s.title, s.say, s.guess, (s.views || [])]), c.parts,
+      c.check, c.simplified, c.tryit && c.tryit.say]),
+    measure: (c.measure || []).map(m => ({ what: m.what, d: Math.hypot(m.a[0] - m.b[0], m.a[1] - m.b[1], m.a[2] - m.b[2]),
+      real: m.real })), unitsPer: c.unitsPer || 0,
   };
 })()"""
 
@@ -70,7 +81,19 @@ NEW_PARTS_PER_STEP = """(() => {
   });
 })()"""
 
+SHAPES = """[...document.querySelectorAll('#art path,#art circle,#art rect,#art ellipse,#art polygon')]
+  .filter(e => !e.closest('.tag')).length"""
+
+# every label the scene can draw in the current state, ignoring what is in view (so a zoomed step still counts)
+ALL_NAMES = """(() => { const v = VIEW, s = SEEN; VIEW = null; SEEN = null;
+  let h = ''; try { h = String(window.__cfg.scene(window.__st(), MAT.steel)); } catch (e) {}
+  VIEW = v; SEEN = s; return [...h.matchAll(/data-part="([^"]+)"/g)].map(m => m[1]); })()"""
+
 UNFINISHED = re.compile(r"(?i)\b(TODO|TBD|placeholder|lorem ipsum|FIXME|XXX)\b")
+HEALTH = re.compile(
+    r"(?i)\b(drugs?|medicines?|medications?|doses?|dosage|mg|tablets?|pills?|vaccines?|diseases?|symptoms?|"
+    r"treatments?|therap(y|ies)|diagnos\w*|addict\w*|overdose|prescri\w*|surgery|cancer)\b"
+)
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -175,6 +198,17 @@ def contact_sheet(thumbs: list, phone, path: str) -> int:
 # ---------------------------------------------------------------------------------------------------------------
 
 
+PAGE_TIMEOUT = 120000  # heavy scenes on a busy machine can take a while to open; never fail on a slow load
+
+
+async def open_page(browser, **kw):
+    """A new page with generous timeouts, so a slow scene is reported as slow instead of crashing the check."""
+    page = await browser.new_page(**kw)
+    page.set_default_timeout(PAGE_TIMEOUT)
+    page.set_default_navigation_timeout(PAGE_TIMEOUT)
+    return page
+
+
 async def screenshot(element_or_page, path: str, mode: str):
     """Screenshot to a temporary file and return it as a PIL image (`mode` 'RGB' or 'L')."""
     from PIL import Image
@@ -185,16 +219,23 @@ async def screenshot(element_or_page, path: str, mode: str):
     return image
 
 
-async def quick_step(browser, url: str, base: str, step: int) -> int:
-    """--step N: one full-size screenshot of a step, and the probe's findings for it."""
-    page = await browser.new_page(viewport=DESKTOP)
+async def quick_step(browser, url: str, base: str, step: int, crop=None) -> int:
+    """--step N: one full-size screenshot of a step, and the probe's findings for it (--crop: a sharp close-up)."""
+    page = await open_page(browser, viewport=DESKTOP, device_scale_factor=3 if crop else 1)
     errors: list[str] = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     await page.goto(url + f"?step={step}")
     await page.wait_for_timeout(400)
     r = await page.evaluate(PROBE)
     shot = base + f".step{step}.png"
-    await page.screenshot(path=shot)
+    if crop:
+        # a sharp close-up of part of the picture (fractions of the drawing's box), to inspect joints and detail
+        fb = await page.evaluate("(() => { const b = document.getElementById('fig').getBoundingClientRect(); return [b.x, b.y, b.width, b.height]; })()")
+        x, y, w, h = crop
+        shot = base + f".step{step}.closeup.png"
+        await page.screenshot(path=shot, clip={"x": fb[0] + x * fb[2], "y": fb[1] + y * fb[3], "width": w * fb[2], "height": h * fb[3]})
+    else:
+        await page.screenshot(path=shot)
     await browser.close()
     found = quick_step_problems(r, errors)
     print(f'step {step} ({r["title"]}): {shot}')
@@ -204,7 +245,7 @@ async def quick_step(browser, url: str, base: str, step: int) -> int:
 
 async def click_through(browser, url: str, errors: list[str]) -> dict:
     """Play the whole lesson like a learner, on its own page."""
-    page = await browser.new_page(viewport=DESKTOP)
+    page = await open_page(browser, viewport=DESKTOP)
     page.on("pageerror", lambda e: errors.append(str(e)))
     await page.goto(url)
     await page.wait_for_timeout(300)
@@ -217,7 +258,7 @@ async def screen_sizes(browser, url: str, step: int, base: str, errors: list[str
     """Open a middle step at every screen size: no sideways scroll, the main button in view, labels inside."""
     found, phone = [], None
     for w, h in SCREEN_SIZES:
-        page = await browser.new_page(viewport={"width": w, "height": h})
+        page = await open_page(browser, viewport={"width": w, "height": h})
         page.on("pageerror", lambda e: errors.append(str(e)))
         await page.goto(url + f"?step={step}")
         await page.wait_for_timeout(300)
@@ -239,12 +280,13 @@ async def record_video(browser, url: str, base: str, problems: list[str]) -> Non
     """--video: play the lesson into the video download and report the file."""
     ctx = await browser.new_context(viewport=DESKTOP, accept_downloads=True)
     page = await ctx.new_page()
+    page.set_default_timeout(PAGE_TIMEOUT)
     await page.goto(url)
     await page.wait_for_timeout(300)
     if not await page.evaluate("window.__video && window.__video()"):
         problems.append("video: this browser cannot record")
         return
-    async with page.expect_download(timeout=400000) as download_info:
+    async with page.expect_download(timeout=1200000) as download_info:  # long lessons with effects take minutes headless
         await page.click("#optB")
         await page.click("#video")
     download = await download_info.value
@@ -260,8 +302,14 @@ async def main(args) -> int:
     src = os.path.abspath(args.lesson)
     base = os.path.splitext(src)[0]
     out = os.path.abspath(args.out or base + ".built.html")
+    page_text = Path(src).read_text(encoding="utf-8")
     try:
-        build(src, out)
+        if 'src="teach.js"' not in page_text and "function mountLesson(" in page_text:
+            # already built (a downloaded or published lesson, or update.py's output): check it as it is
+            if os.path.abspath(out) != src:
+                Path(out).write_text(page_text, encoding="utf-8")
+        else:
+            build(src, out)
     except ValueError as err:
         print(f"PROBLEM {err}")
         return 1
@@ -279,11 +327,19 @@ async def main(args) -> int:
         exe = os.environ.get("CHROME") or None
         browser = await (p.chromium.launch(executable_path=exe) if exe else p.chromium.launch())
         if args.step is not None and not args.full:
-            return await quick_step(browser, url, base, args.step)
+            crop = [float(v) for v in args.crop.split(",")] if args.crop else None
+            return await quick_step(browser, url, base, args.step, crop)
 
-        page = await browser.new_page(viewport=DESKTOP)
+        page = await open_page(browser, viewport=DESKTOP)
         page.on("pageerror", lambda e: errors.append(str(e)))
+        t_open = time.time()
         await page.goto(url)
+        await page.wait_for_function("document.getElementById('art') && document.getElementById('art').childElementCount > 0")
+        open_secs = time.time() - t_open
+        scene_ms = await page.evaluate(
+            "(() => { const t = performance.now(); for (let i = 0; i < 3; i++) window.__cfg.scene(window.__st(), MAT.steel);"
+            " return (performance.now() - t) / 3; })()"
+        )
         await page.wait_for_timeout(300)
         if not await page.evaluate("!!document.getElementById('fig')"):
             reason = "; ".join(sorted(set(errors))) or "no error message (is mountLesson called?)"
@@ -298,13 +354,37 @@ async def main(args) -> int:
 
         # Every view: the start, each step's end state, the sandbox and the quiz.
         states = [("Start", "")] + [(f"Step {k}", f"step={k}") for k in range(1, n + 1)]
+        start_shapes = 0
+        most_el = [0, ""]
+        seen_names: set[str] = set()
+        drawn_names: set[str] = set()
+        out_of_view: list = []
+        empty_labels: dict[str, str] = {}
+        loose_views: list = []
         states += [("Try it", "try=1"), ("Quiz", "check=1")]
         thumbs, pics = [], []
         for name, query in states:
             await page.goto(url + ("?" + query if query else ""))
             await page.wait_for_timeout(250)
             r = await page.evaluate(PROBE)
+            start_shapes = max(start_shapes, await page.evaluate(SHAPES))  # the richest view (close-ups count)
+            n_el = await page.evaluate("document.querySelectorAll('#art *').length")
+            if n_el > most_el[0]:
+                most_el[:] = [n_el, name]
             label = f"{name}: {r['title']}" if r["title"] and name.startswith("Step") else name
+            au = await page.evaluate(AUDIT)
+            seen_names.update(au["names"])
+            drawn_names.update(await page.evaluate(ALL_NAMES))
+            if name.startswith("Step"):
+                k = int(name.split()[1]) - 1
+                step_lit = (await page.evaluate(f"(window.__cfg.steps[{k}].lit || [])")) or []
+                for nm in step_lit:
+                    if nm not in au["names"]:
+                        out_of_view.append((label, nm))
+            for nm in au["empty"]:
+                empty_labels.setdefault(nm, label)
+            if au["loose"]:
+                loose_views.append((label, au["loose"]))
             problems += view_problems(label, r)
             if r["cover"]:
                 notes.append(
@@ -343,6 +423,80 @@ async def main(args) -> int:
                     f"Step {x['n']}: {x['title']}: the caption has {x['words']} words "
                     "(aim for 50 or fewer; 70 for adults)"
                 )
+        if most_el[0] > 1500:
+            notes.append(
+                f"{most_el[1]} has {most_el[0]} drawn elements (aim for under about 1,500): the page gets slow to open and "
+                "to animate. Lighter parts: fewer gears or teeth you can't see, `latheAx(..., {n: 16})` for small round "
+                "parts, `ring`/`wheel` for thin rings, and nothing drawn that is hidden or off screen"
+            )
+        if scene_ms > 60 or open_secs > 6:
+            notes.append(
+                f"the lesson takes {open_secs:.1f} s to open and {scene_ms:.0f} ms to draw one frame (aim for under 40 ms): "
+                "draw fewer, simpler parts (fewer tube points, one organ call per frame, no hidden parts), or the "
+                "animation stutters on slower devices"
+            )
+        # Subject notes (kind: 'machine' | 'living' | 'idea'): real detail, a stated scale, a health notice.
+        kind = lesson["kind"]
+        if not kind:
+            notes.append("no kind set: add kind: 'machine', 'living' or 'idea' to mountLesson (it picks the checks)")
+        if kind in ("machine", "living") and start_shapes < 150:
+            notes.append(
+                f"even the richest view has only {start_shapes} shapes: a {kind} reads as real with its real "
+                "parts (screws, seams, bevels, ticks, ribs, veins, organelles); see the detail pass in drawing.md"
+            )
+        if kind == "living" and not lesson["scale"]:
+            notes.append("living things need a stated scale: scale: 'Schematic, not to scale' or 'Drawn to scale: ...'")
+        if HEALTH.search(lesson["text"]) and not lesson["notice"]:
+            notes.append(
+                "the lesson talks about health, drugs or treatment: add notice: 'Educational, not medical advice.' "
+                "(see living.md, Health and drugs)"
+            )
+        # Audits: lit names that match no label, labels with no explanation, labels pointing at nothing, lines that
+        # stop in mid-air, numbers that the fact sheet doesn't contain, sizes that don't match the stated scale.
+        for nm in sorted(set(lesson["lit"]) - drawn_names):
+            notes.append(
+                f"a step lights '{nm}' but no label in the picture is called that: check the spelling "
+                "(fine only if your scene reads it as a switch, as compound-interest does)"
+            )
+        for where, nm in out_of_view:
+            if nm in drawn_names:
+                notes.append(f"{where}: it lights '{nm}' but that label is out of view in this step (zoom out or include it)")
+        for nm in sorted((seen_names | drawn_names) - set(lesson["parts"])):
+            notes.append(f"label '{nm}' has no parts text, so tapping it explains nothing (add it to parts)")
+        for nm, where in empty_labels.items():
+            notes.append(f"{where}: the label '{nm}' points at empty space (move its point onto the part)")
+        if loose_views:
+            most = max(len(v) for _, v in loose_views)
+            first = "; ".join(f"{lab} at {pts[0][0]},{pts[0][1]}" for lab, pts in loose_views[:2])
+            notes.append(
+                f"up to {most} outline line end(s) per view stop in mid-air ({len(loose_views)} view(s); {first}): a line "
+                "should end on a face edge, another line or a part. Marks that stand for print (a scale, MAX and MIN) may "
+                "stop freely. Look with --step N --crop"
+            )
+        facts = Path(args.lesson).with_name("facts.md")
+        if not facts.exists():
+            facts = Path(args.lesson).with_name(Path(args.lesson).stem.replace(".built", "") + ".facts.md")
+        if facts.exists():
+            ftext = facts.read_text(encoding="utf-8").replace(",", "").replace("\u2212", "-")
+            nums = set(re.findall(r"(?<![\w.])\d[\d,]*(?:\.\d+)?", lesson["words"].replace("\\u2019", "'")))
+            missing = sorted(
+                {x.replace(",", "") for x in nums if float(x.replace(",", "")) >= 2 or "." in x}
+                - set(re.findall(r"\d+(?:\.\d+)?", ftext)),
+                key=lambda v: float(v),
+            )
+            if missing:
+                notes.append(
+                    "numbers in the lesson that facts.md doesn't contain: " + ", ".join(missing[:12])
+                    + " (every number needs a sourced fact; add it or cut it)"
+                )
+        if lesson["measure"] and lesson["unitsPer"]:
+            for m in lesson["measure"]:
+                drawn = m["d"] / lesson["unitsPer"]
+                if m["real"] and abs(drawn - m["real"]) / m["real"] > 0.05:
+                    problems.append(
+                        f"scale: '{m['what']}' is drawn {drawn:.3g} long but is really {m['real']:.3g} "
+                        f"(unitsPer {lesson['unitsPer']}); fix the size or the scale line"
+                    )
         unfinished = UNFINISHED.findall(lesson["text"])
         if unfinished:
             problems.append("unfinished text left in the lesson: " + ", ".join(sorted(set(unfinished))))
@@ -383,10 +537,16 @@ async def main(args) -> int:
                     f"Step {x['n']} ({x['title']}), before pressing: " + "; ".join(r["clash"][:3])
                 )
 
-        drive = await drive_task
+        try:
+            drive = await drive_task
+        except Exception as e:  # a slow or broken page: report it, never crash
+            drive = {"ok": False, "seen": [f"(the click-through stopped: {str(e).splitlines()[0][:120]})"]}
         if not drive["ok"]:
             problems.append("click-through did not reach the end: " + " > ".join(drive["seen"][-12:]))
-        size_problems, phone = await sizes_task
+        try:
+            size_problems, phone = await sizes_task
+        except Exception as e:
+            size_problems, phone = [f"screen sizes could not be checked: {str(e).splitlines()[0][:120]}"], None
         problems += size_problems
         if args.video:
             await record_video(browser, url, base, problems)
@@ -414,4 +574,12 @@ if __name__ == "__main__":
     parser.add_argument("--step", type=int)
     parser.add_argument("--video", action="store_true")
     parser.add_argument("--full", action="store_true", help="with --step: run the full check too")
-    sys.exit(asyncio.run(main(parser.parse_args())))
+    parser.add_argument(
+        "--crop", help="with --step: x,y,w,h as fractions of the picture (e.g. .4,.3,.3,.3) for a sharp 3x close-up"
+    )
+    try:
+        sys.exit(asyncio.run(main(parser.parse_args())))
+    except Exception as e:  # never end with ALL OK after a crash: say what stopped the check
+        print(f"PROBLEM check.py stopped: {type(e).__name__}: {str(e).splitlines()[0][:200] if str(e) else ''}")
+        print("(a slow or stuck page is the usual cause: see the NOTE about drawing time, or try again)")
+        sys.exit(1)

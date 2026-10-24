@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How does a nerve cell send a signal?</title>
+</head>
+<body>
+<script src="teach.js"></script>
+<script>
+/* Lesson: How does a nerve cell send a signal? Level: student. Facts: facts.md.
+   Real process (facts.md): inputs reach the dendrites (1) -> they add up; at the axon's start the voltage reaches
+   threshold (2, 3, 5) -> sodium channels open, sodium flows in, inside goes positive (6) -> sodium channels close,
+   potassium channels open, potassium flows out, a brief dip below rest (7, 8) -> the spike travels to the terminals
+   (13), jumping node to node where there is myelin (14, 15) -> calcium channels open, vesicles release
+   neurotransmitter into the gap (18, 19) -> it crosses and binds receptors on the next cell (20, 21) -> it is
+   cleared away (22). Same-size spikes; stronger input = more spikes (11, 12).
+   Parts list: inputs (other cells' terminals); dendrites; cell body and nucleus; axon start; axon; myelin
+   segments and nodes; axon terminals; the next cell's dendrite. Close-ups: membrane with a sodium and a potassium
+   channel and their ions; a synapse with vesicles, neurotransmitter, the gap and receptors.
+   Sandbox facts: below threshold no spike (5, 11); above, same-size spikes, more often when stronger (11, 12);
+   myelin on is much faster than off (14, 15). Speeds and rates in the sandbox are illustrative. */
+
+// ---- one small model: the voltage at the axon's start over time (ms), from the fact sheet's typical values ----
+const nsRest = -70, nsThr = -55, nsPeak = 30, nsLow = -80;           // facts 4, 5, 6, 8 (typical values)
+function nsV(x) {                                                     // x = time in ms along the trace
+  if (x <= 0) return nsRest;
+  if (x < 2) return nsRest + (nsThr - nsRest) * Math.pow(x / 2, 1.5); // inputs add up to threshold
+  if (x < 2.5) return nsThr + (nsPeak - nsThr) * ease((x - 2) / 0.5); // sodium rushes in
+  if (x < 3.2) return nsPeak + (nsLow - nsPeak) * ease((x - 2.5) / 0.7); // potassium flows out
+  if (x < 5) return nsLow + (nsRest - nsLow) * ((x - 3.2) / 1.8);     // back to rest
+  return nsRest;
+}
+
+// ---- geometry: a front view; nsN(u, v) puts u to the right and v up ----
+const nsN = (u, v, d = 0) => [d, -u, v];
+const nsA0 = 22, nsA1 = 165;                                          // axon start and end (u)
+const nsNodes = [58, 88, 118, 148];                                   // gaps in the myelin
+const nsSegs = [[30, 56], [60, 86], [90, 116], [120, 146]];
+const nsCell = '#e9a6b8', nsNext = '#9db8e6', nsMy = '#f6ecd2', nsAxM = '#d98aa1';
+const nsDend = [150, 205, 118, 240, 98].map((deg, i) => {
+  const a = deg * Math.PI / 180, du = Math.cos(a), dv = Math.sin(a);
+  return tree(nsN(du * 11, dv * 10), nsN(du, dv), { plane: [1, 0, 0], len: 24, r: 3.6, levels: 3, kids: 2, spread: 30, shrink: .74, taper: .6, wiggle: .12, seed: 3 + i * 5 });
+});
+// the path a signal takes from a dendrite tip back to the cell body (walks each branch back to its parent)
+function nsChain(segs, leaf) {
+  const out = [];
+  let sg = leaf;
+  while (sg) {
+    out.push(...sg.pts.slice().reverse());
+    const start = sg.pts[0];
+    sg = segs.find(o => o !== sg && o.pts.includes(start));
+  }
+  out.push(nsN(0, 0));
+  return out;
+}
+const nsTips = [0, 3].map(i => {
+  const segs = nsDend[i], leaf = segs.filter(s => s.level === 3)[1], tip = leaf.pts[leaf.pts.length - 1],
+    d = norm(sub(tip, leaf.pts[leaf.pts.length - 2]));
+  return { tip, bulb: add(tip, mul3(d, 3.4)), from: add(tip, mul3(d, 26)), path: nsChain(segs, leaf) };
+});
+const nsAx = u => nsN(u, Math.sin((u - nsA0) / 40) * 2.2);           // the axon's gentle curve
+const nsAxPts = Array.from({ length: 30 }, (_, i) => nsAx(nsA0 + (nsA1 - nsA0) * i / 29));
+const nsTerms = [[181, 9], [184, 0], [181, -9]];
+const nsTermPt = i => nsN(nsTerms[i][0], nsTerms[i][1]);
+
+// tokens: sodium, potassium, input signals and neurotransmitter (drawn larger than life; see the legend)
+TOKENS.na = { m: { l: '#ffd9a8', m: '#f0913a', d: '#a85412' }, draw: ([X, Y], R, k) => `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(R)}" fill="${k.m.m}" stroke="${k.m.d}" stroke-width=".7"/><path d="M${f(X - R * .5)} ${f(Y)}H${f(X + R * .5)}M${f(X)} ${f(Y - R * .5)}V${f(Y + R * .5)}" stroke="#fff" stroke-width="${f(R * .3)}" stroke-linecap="round"/>` };
+TOKENS.kk = { m: { l: '#e3d4fa', m: '#8a63d2', d: '#4b2e8a' }, draw: ([X, Y], R, k) => `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(R)}" fill="${k.m.m}" stroke="${k.m.d}" stroke-width=".7"/><path d="M${f(X - R * .5)} ${f(Y)}H${f(X + R * .5)}M${f(X)} ${f(Y - R * .5)}V${f(Y + R * .5)}" stroke="#fff" stroke-width="${f(R * .3)}" stroke-linecap="round"/>` };
+TOKENS.sig = { m: { l: '#fff6b0', m: '#f7d038', d: '#b08a06' }, draw: ([X, Y], R, k) => `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(R * 1.6)}" fill="${k.m.l}" opacity=".6"/><circle cx="${f(X)}" cy="${f(Y)}" r="${f(R)}" fill="${k.m.m}" stroke="${k.m.d}" stroke-width=".6"/>` };
+TOKENS.nt = { m: { l: '#c8f0d2', m: '#3fb36b', d: '#1f6e3d' }, draw: ([X, Y], R, k) => `<circle cx="${f(X)}" cy="${f(Y)}" r="${f(R)}" fill="${k.m.m}" stroke="${k.m.d}" stroke-width=".5"/>` };
+
+// ---- close-up 1: the membrane at the axon's start, drawn around FAR in front view ----
+const nsF = (u, v) => [0, FAR[1] - u, FAR[2] + v];
+const nsI1 = { at: nsN(40, -50), r: 36, k: 4.2, from: nsN(24, 0), fromR: 4, view: 'front', label: 'Close-up of the membrane at the axon start' };
+const nsMem1 = [nsF(-12, 0), nsF(0, 0), nsF(12, 0)];
+function nsClose1(st) {
+  let s = '';
+  s += fill(pd([nsF(-12, 0), nsF(12, 0), nsF(12, 12), nsF(-12, 12)]), '#eef6fb');   // outside the cell
+  s += fill(pd([nsF(-12, 0), nsF(12, 0), nsF(12, -12), nsF(-12, -12)]), '#fbeef1'); // inside
+  s += membrane(nsMem1, { thick: 3.4, gaps: [{ at: .35, w: 3.6 }, { at: .65, w: 3.6 }] });
+  s += channel(nsF(-3.6, 0), [0, 0, 1], { h: 4.6, w: 1.6, open: st.na, m: '#f0a35e' });
+  s += channel(nsF(3.6, 0), [0, 0, 1], { h: 4.6, w: 1.6, open: st.k, m: '#9d7fe0' });
+  const outNa = [[-6.4, 3.6], [-1.2, 5.6], [5.6, 4.2], [1.6, 7.2], [-4.6, 6.6], [7.2, 2.6], [3.4, 2.8], [-7.4, 1.9]];
+  const inK = [[-6.4, -3.6], [-1.2, -5.4], [6, -3.4], [1.6, -7.2], [-4.4, -6.6], [-7.4, -1.9], [4.4, -6.4], [7.4, -2]];
+  outNa.forEach(([u, v], i) => { if (i >= 8 - Math.round(st.na * 3)) return; s += token(nsF(u, v + Math.sin(st.t * 1.3 + i) * .4), 'na', .8); });
+  inK.forEach(([u, v], i) => { if (i >= 8 - Math.round(st.k * 3)) return; s += token(nsF(u, v + Math.sin(st.t * 1.1 + i) * .4), 'kk', .8); });
+  s += flow([nsF(-3.6, 7), nsF(-3.6, -7)], 'na', st.na, st.t, 4, .5, .8);
+  s += flow([nsF(3.6, -7), nsF(3.6, 7)], 'kk', st.k, st.t, 4, .5, .8);
+  const [ox, oy] = P(...nsF(-3, 7.6)), [ix, iy] = P(...nsF(-2.6, -8.2));
+  s += `<text x="${f(ox)}" y="${f(oy)}" font-size="1.3" font-family="${SANS}" font-weight="650" fill="#4a6a80">Outside</text>`;
+  s += `<text x="${f(ix)}" y="${f(iy)}" font-size="1.3" font-family="${SANS}" font-weight="650" fill="#8a4a5c">Inside</text>`;
+  return s;
+}
+
+// ---- close-up 2: the synapse between an axon terminal and the next cell ----
+const nsI2 = { at: nsN(146, -50), r: 38, k: 4.2, from: nsN(186, 0), fromR: 5, view: 'front', label: 'Close-up of the synapse' };
+const nsMem2 = [nsF(-12, -4.5), nsF(0, -4.5), nsF(12, -4.5)];
+const nsVes = [[-3.2, 4.2], [0.4, 5.6], [3.4, 3.8], [-0.6, 2.4], [-4.6, 6.8], [3.8, 7]];
+function nsClose2(st) {
+  let s = '';
+  s += fill(pd([nsF(-12, -12), nsF(12, -12), nsF(12, 12), nsF(-12, 12)]), '#f4f6f9');
+  s += fill(pd([nsF(-12, -4.5), nsF(12, -4.5), nsF(12, -12), nsF(-12, -12)]), '#e9f0fb'); // the next cell
+  s += membrane(nsMem2, { thick: 2.6, m: '#a9c3ec', gaps: [{ at: .3, w: 2.6 }, { at: .5, w: 2.6 }, { at: .7, w: 2.6 }] });
+  [-4.8, 0, 4.8].forEach(u => { s += channel(nsF(u, -4.5), [0, 0, 1], { h: 3.6, w: 1.2, open: st.bind * (1 - st.clear), m: '#5b86d6' }); });
+  // the axon terminal: a rounded end of the axon full of vesicles
+  const tPts = Array.from({ length: 28 }, (_, i) => { const a = i / 28 * 2 * Math.PI; return nsF(Math.cos(a) * 9.6, 5.6 + Math.sin(a) * 6.8 * (Math.sin(a) < 0 ? .62 : 1)); });
+  s += shape(tPts, nsCell, .9);
+  s += line(Array.from({ length: 15 }, (_, i) => { const a = Math.PI + i / 14 * Math.PI; return nsF(Math.cos(a) * 8.6, 5.6 + Math.sin(a) * 6.8 * .62 + .6); }), .5);
+  nsVes.forEach(([u, v], i) => {
+    const go = clamp(st.rel * 1.6 - i * .12), vv = v + (1.9 - v) * ease(go), open = go > .95 && i < 3;
+    const [X, Y] = P(...nsF(u, vv));
+    s += open
+      ? `<path d="M${f(X - 1.2)} ${f(Y - .3)}A1.2 1.2 0 0 1 ${f(X + 1.2)} ${f(Y - .3)}" fill="none" stroke="#7a3a50" stroke-width=".35"/>`
+      : `<circle cx="${f(X)}" cy="${f(Y)}" r="1.3" fill="#fff5f7" stroke="#7a3a50" stroke-width=".35"/>` +
+        [[-.45, -.2], [.4, .1], [0, .5], [-.1, -.55]].map(([a, b]) => `<circle cx="${f(X + a)}" cy="${f(Y + b)}" r=".28" fill="#3fb36b"/>`).join('');
+  });
+  // neurotransmitter crossing the gap, then binding, then cleared
+  const nAmt = st.rel > .6 ? (1 - st.clear) : 0;
+  [-4.8, 0, 4.8].forEach((u, i) => { s += flow([nsF(u * .5, 1.2), nsF(u, -2.9)], 'nt', nAmt * (1 - st.bind * .7), st.t + i * .3, 4, .45, .5); });
+  if (st.bind > .05) [-4.8, 0, 4.8].forEach(u => { s += fade(st.bind * (1 - st.clear), token(nsF(u, -2.6), 'nt', .55)); });
+  if (st.clear > .05) s += flow([nsF(-1, -1.5), nsF(-3.5, 1.8)], 'nt', st.clear * (1 - st.clear) * 3, st.t, 3, .5, .5);
+  const [gx, gy] = P(...nsF(5.6, -2.6));
+  s += `<text x="${f(gx)}" y="${f(gy)}" font-size="1.3" font-family="${SANS}" font-weight="650" fill="#555">gap</text>`;
+  return s;
+}
+
+// ---- the picture: back to front, labels last ----
+function scene(st, m) {
+  let s = '';
+  // other cells' axon terminals touching two dendrite tips (where inputs arrive)
+  nsTips.forEach(tp => { s += tube([tp.from, tp.bulb], 1.1, '#c9c2cf'); s += act('input', blob(tp.bulb, 2.4, 2.4, 2.4, '#c9c2cf', { w: 1 })); });
+  // the next cell's dendrite, to the right of the terminals
+  s += tube([nsN(197, 26), nsN(193, 8), nsN(194, -8), nsN(199, -26)], 3.4, nsNext, { r1: 2.8 });
+  s += tube([nsN(194, 2), nsN(204, 10), nsN(212, 12)], 1.8, nsNext, { r1: 1 });
+  // dendrites, then the axon, then the cell body over their roots
+  nsDend.forEach(t => { s += branch(t, nsCell); });
+  s += tube([nsN(10, 0), nsN(16, .3), nsAx(nsA0 + 2)], 4.4, nsCell, { r1: 2.1 });
+  s += tube(nsAxPts, 2.4, nsAxM);
+  nsTerms.forEach((_, i) => { s += tube([nsAx(nsA1 - 1), nsN(172, nsTerms[i][1] * .4), nsTermPt(i)], 1.3, nsAxM, { r1: 1.1 }); });
+  nsTerms.forEach((_, i) => { s += act('terminal', blob(add(nsTermPt(i), nsN(2.2, 0)), 2.6, 2.8, 2.8, nsCell, { w: 1 })); });
+  if (st.myelin) nsSegs.forEach(([a, b]) => {
+    s += tube(Array.from({ length: 6 }, (_, i) => nsAx(a + (b - a) * i / 5)), 4.6, nsMy, { w: 1.1 });
+    // the wraps of myelin: a few faint rings across each segment
+    for (let k = 1; k < 4; k++) { const u = a + (b - a) * k / 4, c = nsAx(u); s += line([add(c, nsN(.5, 3.4)), add(c, nsN(-.5, -3.4))], .45); }
+  });
+  s += blob(nsN(0, 0, 0), 10, 14, 12, nsCell, { lumps: .05, seed: 2 });
+  s += blob(nsN(-1.5, 1.2, 4), 4, 5.6, 5, '#b9718a', { w: .9 });                   // nucleus
+  s += blob(nsN(-2.4, 2.4, 6), 1.2, 1.6, 1.4, '#8d4f66', { w: .6 });               // nucleolus
+  // the signal: inputs flowing in, the axon start lighting up, the spike moving along the axon
+  nsTips.forEach((tp, i) => { s += flow(tp.path, 'sig', st.inp, st.t + i * .37, 5, .32, 1.1); });
+  s += glow(nsN(12, 0, 1), 10, st.sum * .7 * (1 - st.reset), '#ffd34d');
+  if (st.ap >= 0 && st.ap <= 1) {
+    const uRaw = nsA0 + (nsA1 - nsA0) * st.ap;
+    let u = uRaw;
+    if (st.myelin && st.jump) { const nd = [nsA0, ...nsNodes, nsA1].filter(x => x <= uRaw + .01); u = nd[nd.length - 1]; }
+    s += glow(add(nsAx(u), [1, 0, 0]), st.myelin && st.jump ? 9 : 7, .9, '#ffd34d');
+    s += token(add(nsAx(u), [2, 0, 0]), 'sig', 1.6);
+    if (!(st.myelin && st.jump)) s += trail(st.ap, tt => token(add(nsAx(nsA0 + (nsA1 - nsA0) * clamp(tt)), [2, 0, 0]), 'sig', 1.3), { n: 3, dt: .05, op: .35 });
+  }
+  s += glow(add(nsTermPt(1), [1, 0, 0]), 12, st.termGlow * .8, '#ffd34d');
+  // the voltage trace: one curve from the model, drawn up to now
+  const g = graph(nsN(60, 40), 86, 46, { xr: [0, 6], yr: [-90, 40] });
+  s += fade(st.see0, g.panel() + g.axes({ x: 'Time (ms)', y: 'Voltage (mV)', xticks: [0, 2, 4, 6], yticks: [-80, -40, 0, 40] }) +
+    g.guide({ y: nsThr }, '#c2410c', 'Threshold') +
+    (st.tr > 0 ? g.curve(x => nsV(x), '#1d4ed8', { w: 2.4, to: st.tr }) : '') + g.dot(st.tr, nsV(st.tr), '#1d4ed8', { r: 3 }));
+  // close-ups
+  if (st.see1 > .02) s += fade(st.see1, inset(nsI1, () => nsClose1(st)));
+  if (st.see2 > .02) s += fade(st.see2, inset(nsI2, () => nsClose2(st)));
+  // labels: most important first
+  s += tag(nsN(-26, 15), -14, -16, 'Dendrite');
+  s += tag(nsAx(100), 4, 18, 'Axon');
+  if (st.myelin) s += tag(nsAx(73), -6, -20, 'Myelin');
+  s += tag(nsTermPt(0), 10, -18, 'Axon terminal');
+  if (st.see1 > .5) {
+    s += tag(insetPt(nsI1, nsF(-3.6, 2.4)), -22, -16, 'Sodium channel');
+    s += tag(insetPt(nsI1, nsF(3.6, 2.4)), 22, -16, 'Potassium channel');
+  }
+  if (st.see2 > .5) s += tag(insetPt(nsI2, nsF(4.8, -5)), 26, 10, 'Receptor');
+  // the key for the moving things
+  const keys = [];
+  if (st.inp > .05 || st.ap >= 0) keys.push(['sig', 'Signal']);
+  if (st.see1 > .5) keys.push(['na', 'Sodium'], ['kk', 'Potassium']);
+  if (st.see2 > .5) keys.push(['nt', 'Neurotransmitter']);
+  s += legend(keys);
+  return s;
+}
+
+// ---- sandbox: same-size spikes, more often when the input is stronger; myelin makes them travel faster ----
+function nsTick(st, dt, ui) {
+  const stim = st.stim / 100, above = stim >= .4;                   // illustrative threshold at 40 percent
+  st.inp = stim; st.sum = Math.min(1, stim / .4);
+  st.cool = Math.max(0, st.cool - dt);
+  if (above && st.cool <= 0 && st.tr >= 5) { st.tr = 2; st.cool = 2.6 - 1.9 * (stim - .4) / .6; st.fired++; st.ap = 0; }
+  if (st.tr < 5 && above) st.tr = Math.min(6, st.tr + dt * 1.6); // play the spike on the trace
+  if (!above) st.tr = 2 * Math.pow(stim / .4, 1 / 1.5) * .999;   // a bump that stays under threshold
+  if (above && st.tr >= 5 && st.tr < 6) st.tr = 5;
+  st.na = st.tr > 2 && st.tr < 2.6 ? 1 : 0; st.k = st.tr > 2.4 && st.tr < 3.4 ? 1 : 0;
+  if (st.ap >= 0) { st.ap += dt * (st.myelin ? 1.1 : .22); if (st.ap > 1) { st.ap = -1; st.termGlow = 1; } }
+  st.termGlow = Math.max(0, st.termGlow - dt * 1.5);
+}
+function nsObserve(st) {
+  const stim = st.stim / 100;
+  if (stim < .4) return stim < .05 ? 'No input. The cell rests at about -70 mV.' : 'The input is too weak to reach threshold, so no spike fires.';
+  const rate = stim > .8 ? 'often' : stim > .6 ? 'more often' : 'now and then';
+  return `Spikes fire ${rate}, and every one is the same height. ${st.myelin ? 'With myelin they race down the axon.' : 'Without myelin they crawl down the axon.'}`;
+}
+
+mountLesson({
+  title: 'How does a nerve cell send a signal?',
+  level: 'student',
+  kind: 'living',
+  scale: 'Schematic, not to scale. The cell, the gap and the close-ups are drawn at sizes that fit the screen.',
+  view: 'front',
+  guess: true,
+  autoZoom: true,
+  reveal: true,
+  palette: MAT.steel,
+  state: { t: 0, inp: 0, sum: 0, reset: 0, tr: 0, na: 0, k: 0, see0: 0, see1: 0, see2: 0, ap: -1, jump: false, myelin: false, termGlow: 0, rel: 0, bind: 0, clear: 0, stim: 0, cool: 0, fired: 0 },
+  stats: st => [{ label: 'Voltage at the axon start', value: Math.round(nsV(st.tr)) + ' mV' }],
+  scene,
+  intro: 'Your nerve cells pass messages all the time. This one has branches that collect signals, a long thin cable that carries them away, and ends that hand them to the next cell. You will send one signal all the way through.',
+  parts: {
+    'Dendrite': 'A branch that collects signals from other nerve cells. One cell can have many.',
+    'Axon': 'The long, thin part that carries the signal away from the cell body toward other cells.',
+    'Myelin': 'A fatty wrapping made by other cells, not by the nerve cell itself. It insulates the axon and makes signals travel much faster.',
+    'Axon terminal': 'An end of the axon. Here the signal is handed to the next cell across a tiny gap.',
+    'Sodium channel': 'A gate in the cell’s outer skin, the membrane. When it opens, sodium flows into the cell and the inside turns positive.',
+    'Potassium channel': 'A gate that opens a moment later. Potassium flows out, and the voltage drops back.',
+    'Receptor': 'A spot on the next cell where neurotransmitter binds. In the simplest case it is a gate that opens and changes that cell’s voltage.',
+  },
+  steps: [
+    { chapter: 'Getting the message', title: 'Inputs arrive', lit: ['Dendrite'],
+      do: { label: 'Press an input', part: 'input', at: nsTips[0].bulb, hint: 'Press one of the grey knobs touching a branch.' },
+      say: 'Other nerve cells touch the branches of this one. These branches are called dendrites, and they collect incoming signals. Each signal nudges the voltage inside the cell a little. Dendrites are where the message comes in.',
+      run(st, ui) { ui.tween({ inp: 1, see0: 1, tr: .8 }, 1.4); } },
+    { title: 'Inputs add up', lit: ['Dendrite'], zoom: null,
+      drag: { label: 'Drag to send more inputs', secs: 3 },
+      say: 'At rest the inside of the cell sits at about -70 mV. Many inputs add together. If the total reaches a level called the threshold, about -55 mV, the cell fires. Below it, nothing happens.',
+      run(st, ui) { ui.tween({ tr: 2, sum: 1 }, 3); } },
+    { chapter: 'The spike', title: 'Sodium rushes in', lit: ['Sodium channel'],
+      guess: { q: 'The voltage has reached threshold. What happens next?', choices: ['The inside slowly drifts back to rest', 'Gates open and the inside quickly turns positive', 'The cell pushes all its sodium out'], answer: 1,
+        why: 'At threshold, sodium channels open. Sodium rushes in and the inside becomes positive, about +30 mV, in a fraction of a millisecond.' },
+      do: { label: 'Open the sodium channels', part: 'input', at: nsTips[0].bulb, hint: 'Press an input again to push past threshold.' },
+      say: 'At the axon’s start, gates in the cell’s outer skin open. They are sodium channels. Sodium flows in, and the inside jumps to about +30 mV. This sudden jump is the spike.',
+      run(st, ui) { st.see1 = Math.max(st.see1, .01); ui.tween({ see1: 1, na: 1, inp: 0 }, .8, () => ui.tween({ tr: 2.5 }, 1)); } },
+    { title: 'Potassium flows out', lit: ['Potassium channel'],
+      drag: { label: 'Drag to reset the cell', secs: 3 },
+      say: 'At the peak, the sodium channels close and potassium channels open. Potassium flows out, so the voltage falls. It dips below -70 mV for a moment, then settles back. The whole spike takes only about 2 ms.',
+      run(st, ui) { ui.animate(dt => { st._r = Math.min(1, (st._r || 0) + dt / 3); const r = ease(st._r); st.na = Math.max(0, 1 - r * 4); st.k = r < .8 ? Math.min(1, r * 4) : (1 - r) * 5; st.tr = 2.5 + 2.5 * r; st.reset = r; if (st._r >= 1) { st.k = 0; st.na = 0; st.tr = 5; delete st._r; return false; } return true; }); } },
+    { title: 'Down the axon', lit: ['Axon'],
+      drag: { label: 'Drag to send the spike', secs: 3 },
+      say: 'The spike does not stay at the axon\u2019s start. It travels along the axon, spot by spot, toward the axon terminals. Without myelin, this is fairly slow: about 0.5 to 10 metres a second.',
+      run(st, ui) { st.see1 = 0; st.ap = 0; ui.tween({ ap: .999 }, 3); } },
+    { title: 'Myelin speeds it up', lit: ['Myelin'],
+      guess: { q: 'Now the axon is wrapped in fatty myelin, with small gaps. What happens to the spike?', choices: ['It slows down', 'It jumps from gap to gap and travels much faster', 'It stops at the first wrapping'], answer: 1,
+        why: 'Myelin insulates the axon. The spike is made only at the gaps and jumps between them, which is much faster: up to about 150 m/s, against 0.5 to 10 m/s without myelin.' },
+      do: { label: 'Wrap the axon', part: 'terminal', at: nsTermPt(1), hint: 'Press an axon end to send a new spike.' },
+      say: 'Other cells wrap many axons in a fatty layer called myelin, with small gaps between the wraps. The spike forms only at the gaps and jumps from gap to gap. This is much faster than crawling along.',
+      run(st, ui) { st.myelin = true; st.jump = true; st.ap = 0; ui.tween({ ap: .999 }, 1.6, () => { st.ap = -1; st.termGlow = 1; }); } },
+    { chapter: 'Crossing the gap', title: 'Messengers released', lit: ['Axon terminal'],
+      do: { label: 'Release the messengers', part: 'terminal', at: nsTermPt(1), hint: 'Press the glowing axon end.' },
+      say: 'At the axon terminal, the spike opens calcium channels. Tiny bubbles called vesicles join the cell’s outer skin and spill a chemical messenger into the gap. This messenger is a neurotransmitter.',
+      run(st, ui) { st.see2 = Math.max(st.see2, .01); st.ap = -1; st.termGlow = 1; ui.tween({ see2: 1, termGlow: .3 }, .8, () => ui.tween({ rel: 1 }, 1.6)); } },
+    { title: 'Messengers bind', lit: ['Receptor'],
+      guess: { q: 'At this kind of synapse, how does the signal get across the gap?', choices: ['The electric spike jumps across like a spark', 'Chemical messengers drift across and fit receptors', 'The next cell reaches over and grabs the spike'], answer: 1,
+        why: 'At this kind of synapse, neurotransmitter drifts across a gap about 20 to 40 nanometres wide and binds receptors on the next cell.' },
+      drag: { label: 'Drag to let them cross', secs: 2.5 },
+      say: 'The neurotransmitter drifts across the gap, about 20 to 40 nanometres wide. It fits into receptors on the next cell. In the simplest case, a receptor is a gate. It opens and changes the next cell’s voltage.',
+      run(st, ui) { ui.tween({ bind: 1 }, 2.5); } },
+    { title: 'The signal ends', lit: ['Receptor'],
+      drag: { label: 'Drag to clear the gap', secs: 2.5 },
+      say: 'The messenger does not stay. It is taken back up by the terminal or nearby cells, broken down, or drifts away. Once the messenger is gone, its effect on the next cell stops.',
+      run(st, ui) { ui.tween({ clear: 1, termGlow: 0 }, 2.5); } },
+  ],
+  tryit: {
+    say: 'Set the input strength and watch the voltage. Find the threshold. Then turn the myelin off and on.',
+    setup(st) { Object.assign(st, { stim: 0, inp: 0, sum: 0, reset: 0, tr: 0, na: 0, k: 0, see0: 1, see1: 0, see2: 0, ap: -1, jump: true, myelin: true, rel: 0, bind: 0, clear: 0, cool: 0, termGlow: 0 }); },
+    tick: nsTick,
+    observe: nsObserve,
+    controls: [
+      { type: 'range', key: 'stim', label: 'Input strength', min: 0, max: 100, step: 5, format: v => v + '%' },
+      { type: 'toggle', key: 'myelin', label: 'Myelin' },
+    ],
+  },
+  idea: 'A nerve cell fires an all-or-none spike when its inputs reach threshold, and passes it on with chemical messengers.',
+  simplified: [
+    'The voltages are typical values. Real ones vary between kinds of nerve cell and between animals.',
+    'Ions, channels and vesicles are drawn far larger and far fewer than real. A real cell has far more channels than we draw.',
+    'Many nerve cells have no myelin, and some have a different shape. Some synapses pass the signal electrically, without a messenger; this lesson shows the chemical kind.',
+    'The sodium-potassium pump, which keeps the sodium and potassium apart at rest, is not drawn.',
+    'In Try it yourself, the threshold, the firing rate and the speeds are illustrative, and time is slowed down so you can see each spike.',
+  ],
+  check: [
+    { q: 'You double the strength of an input that is already above threshold. What changes?',
+      choices: ['Each spike gets twice as tall', 'Spikes fire more often, but each is the same size', 'The cell stops firing'], answer: 1,
+      why: 'Spikes are all-or-none. A stronger input makes them fire more often, not bigger.' },
+    { q: 'Which gates open first when the voltage reaches threshold?',
+      choices: ['Potassium channels', 'Sodium channels', 'Receptors on the next cell'], answer: 1,
+      why: 'Sodium channels open first and sodium flows in. Potassium channels open a moment later to bring the voltage back down.' },
+    { q: 'An illness damages the myelin around axons. What would you expect?',
+      choices: ['Signals travel faster', 'Signals are slowed or disrupted', 'Nothing changes, because myelin is only padding'], answer: 1,
+      why: 'Myelin is what lets spikes jump from gap to gap. In multiple sclerosis the immune system attacks myelin, and losing it disrupts how signals travel.' },
+  ],
+  sources: [
+    { title: 'OpenStax Anatomy and Physiology 2e, 12.4 The Action Potential', url: 'https://openstax.org/books/anatomy-and-physiology-2e/pages/12-4-the-action-potential', note: 'Resting voltage, the spike, sodium and potassium channels, all-or-none, timing' },
+    { title: 'OpenStax Anatomy and Physiology 2e, 12.5 Communication Between Neurons', url: 'https://openstax.org/books/anatomy-and-physiology-2e/pages/12-5-communication-between-neurons', note: 'Inputs adding up, the axon start, release and binding of neurotransmitter' },
+    { title: 'Purves et al., Neuroscience: Increased conduction velocity as a result of myelination (NCBI Bookshelf)', url: 'https://www.ncbi.nlm.nih.gov/books/NBK10921/', note: 'Myelin, jumping between gaps, speeds' },
+    { title: 'Purves et al., Neuroscience: Voltage-dependent membrane permeability (NCBI Bookshelf)', url: 'https://www.ncbi.nlm.nih.gov/books/NBK11003/', note: 'Threshold and the sodium rise' },
+    { title: 'Queensland Brain Institute: Action potentials and synapses', url: 'https://qbi.uq.edu.au/brain-basics/brain/brain-physiology/action-potentials-and-synapses', note: 'Dendrites, threshold, the width of the gap' },
+    { title: 'StatPearls: Physiology, Synapse (NCBI Bookshelf)', url: 'https://www.ncbi.nlm.nih.gov/books/NBK526047/', note: 'Calcium, vesicles, receptors and clearing the messenger' },
+    { title: 'NINDS: Multiple sclerosis', url: 'https://www.ninds.nih.gov/health-information/disorders/multiple-sclerosis', note: 'Myelin made by other cells, and its loss in MS' },
+  ],
+});
+</script>
+</body>
+</html>
